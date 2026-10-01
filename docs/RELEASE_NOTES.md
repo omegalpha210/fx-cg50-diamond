@@ -1,27 +1,33 @@
-# DIAMOND v0.1.0-beta.1
+# DIAMOND v0.1.0-beta.2
 
-First public experimental prerelease for CASIO fx-CG50.
+UI/UX polish prerelease for CASIO fx-CG50, preserving beta.1 game rules, AI
+strength/profiles/RNG and v1 A/B storage/power semantics.
 
-- Korean 73-hole Diamond Game with ten equal pieces, steps and chained jumps.
-- Human RED versus AI: two-player GREEN or independent three-player GREEN/YELLOW.
-- EASY seeded heuristic play, NORMAL bounded search, HARD larger bounded search;
-  alpha-beta for 2P and independent MaxN for 3P.
-- Solid pieces/cyan Assist, three colored difficulty faces, AI menu icons,
-  red human annotation and black/white RULES keys.
-- Assist, one-human-decision Undo, confirmed Restart, Zoom and one-game Resume.
-- Crash-safe checksummed A/B storage; old EASY/HARD v1 IDs preserved; NORMAL ID 2.
-- System-setting dim/APO support, physical-key brightness restoration, foreground
-  cancellation and committed-state checkpoints before MENU/OFF/APO.
+- Text-only THINKING dots cycle at 312.5ms through the existing foreground hook;
+  fixed small region, no spinner, RNG consumption or internal idle reset.
+- Dark TURN : prefix and colored actors, full difficulty-colored centered mode
+  label, colored goal names/fractions without dots, content-sized panels/warnings.
+- White profile silhouette in RED PLAYER icons; centered black AI retained.
+- PLAYER F1 global RESUME works independently of the selected player-count tile.
+- NUM GAME-style numbered setup: optional matching RESUME, NEW GAME, DIFFICULTY,
+  FIRST/HUMAN and ASSIST last. LEFT/RIGHT clamps; EXE/F6 OPEN resumes only on
+  RESUME and starts current NEW from every other row. Legacy SET/SETTINGS removed.
+- Normal EXIT deselects → zooms out → checkpoints to setup. Busy CPU EXIT retains
+  direct cancel/save/setup; restart/rules/result exits keep precedence.
 
-See [beta validation](BETA_VALIDATION.md), [AI audit](AI_DIFFICULTY_AUDIT.md),
-[power audit](POWER_AUDIT.md) and [memory measurements](MEMORY.md) for evidence.
-The package is rebuilt from the exact public source. Release assets are
-`DIAMOND.g3a` and `SHA256SUMS.txt`; verify with `shasum -a 256 -c SHA256SUMS.txt`.
+[UI audit](UI_POLISH_BETA2.md), [validation](BETA_VALIDATION.md),
+[acceptance](ACCEPTANCE.md), [captures](screenshots/README.md) and
+[memory](MEMORY.md) record exact behavior, pixel/transition tests and source rebuild.
+Strict host and full UBSan: 11/11; warning-free SH; 16 package checks;
+69 actual renderer captures; 720 EASY goldens and 192 AI choices/stats unchanged.
+The package is 87,628 bytes, SHA256
+`5c4f9561e0b0bc46dc31ffcb1a7e811c714b044e4c3e5c703debe9c9b3145438`.
+Assets: `DIAMOND.g3a`, `SHA256SUMS.txt`. Verify with
+`shasum -a 256 -c SHA256SUMS.txt`.
 
-**HARDWARE TEST REQUIRED.** Host tests, mocked native APIs and actual renderer
-captures establish software behavior, not physical LCD, OS query compatibility,
-persistence, MENU/OFF/APO operation or calculator AI response time. All
-[28 hardware acceptance checks](HARDWARE_RETEST.md) remain pending. The initial
-NORMAL short-response and HARD roughly 1–2-second targets are unmeasured.
-If both timer and RTC wake allocation fail, autonomous dim/APO is unavailable
-and the add-in displays a warning. This is a beta, not a stable v1.0 release.
+**HARDWARE TEST REQUIRED.** All [32 physical acceptance checks](HARDWARE_RETEST.md)
+remain pending: LCD colors/contrast, actual dots and input response, native
+persistence, OS dim/APO, MENU/OFF and native AI latency/memory. HARD roughly
+1–2 seconds remains an unmeasured target. Host timing and mocked native APIs
+are not calculator evidence. ASan remains NOT VERIFIED due to the previously
+observed Darwin runtime startup hang. This is an experimental beta prerelease.

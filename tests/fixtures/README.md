@@ -6,7 +6,16 @@ generated opening boards, not personal saved games. Their persisted level bytes
 are respectively 0 and 1. The compatibility test decodes and re-encodes them
 byte for byte, then resumes directly into the same difficulty.
 
-The legacy engine golden and source hashes preserve topology, legal moves,
-paths, EASY choices/RNG, undo, v1 serialization, and the unchanged rule text.
-The freeze check permits the explicit new difficulty validation/selector and
-new AI profiles; it does not require the previous HARD search to remain fixed.
+`engine-golden-legacy.txt` retains the historical pre-NORMAL record.
+`engine-golden-beta1.txt` and `ai-choices-beta1.csv` were captured before beta.2
+edits at public baseline `f7e111c9c2a12243275875473fbbc30ecb34d628` / local
+`42e5a55`. The CSV includes all 192 fixed-position choices (32 positions ×
+2 modes × 3 levels), chosen endpoints/type/hops, RNG, legal counts, nodes,
+completed depth and beam. Only host timing is excluded.
+
+The beta.2 freeze check requires exact output equality, including HARD, and
+byte-identical engine/game/AI/storage/power interfaces and sources. It also
+freezes both engine/AI unit sources, including all 720 EASY golden choices,
+and preserves the 21 rule strings. UI/controller files may implement the
+requested setup/EXIT/visual behavior; persisted difficulty IDs and v1 codec
+remain frozen.

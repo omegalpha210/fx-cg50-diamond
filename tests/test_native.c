@@ -14,7 +14,7 @@ static unsigned checks;
  } } while(0)
 
 typedef struct {
- uint32_t now;
+ uint32_t now,rtc_step;unsigned thinking_phases;
  bool held[32],cleanup_ok,save_ok,rtc_ok,world;
  int brightness,backlight,apo;
  unsigned saves,cleanups,menus,offs,starts,pauses,enables,disables,updates,rectangles,reads,clears;
@@ -64,10 +64,10 @@ void clearevents(void){++mock.clears;mock.head=mock.tail;record('B');}
 void dsetvram(uint16_t *first,uint16_t *second){CHECK(first==gint_vram && second==NULL);}
 void drect(int x1,int y1,int x2,int y2,int color)
 {(void)color;CHECK(x1<=x2 && y1<=y2);++mock.rectangles;}
-void dupdate(void){++mock.updates;}
+void dupdate(void){++mock.updates;if(app.thinking)mock.thinking_phases|=1u<<app.thinking_phase;}
 uint16_t r61524_get(int reg){CHECK(reg==0x5a1);++mock.light_reads;return (uint16_t)mock.brightness;}
 void r61524_set(int reg,uint16_t value){CHECK(reg==0x5a1);++mock.light_writes;mock.brightness=value;record('L');}
-uint32_t rtc_ticks(void){++mock.rtc_reads;return mock.now;}
+uint32_t rtc_ticks(void){++mock.rtc_reads;mock.now=(mock.now+mock.rtc_step)%DG_RTC_DAY;return mock.now;}
 void rtc_get_time(rtc_time_t *time){*time=(rtc_time_t){2026,1,10};}
 char dg_os_backlight_duration(void){CHECK(mock.world);++mock.backlight_queries;return (char)mock.backlight;}
 int dg_os_apo_minutes(void){CHECK(mock.world);++mock.apo_queries;return mock.apo;}
@@ -109,7 +109,7 @@ static void reset(void)
  memset(&mock,0,sizeof mock);mock.cleanup_ok=mock.save_ok=mock.rtc_ok=true;
  mock.brightness=0x80;mock.backlight=1;mock.apo=10;
  scheduler=7;pending_action=0;timer_active=rtc_active=shift_pending=brightness_saved=false;
- saved_brightness=0;blocked=animation_last=0;wakeup=0;
+ saved_brightness=0;blocked=animation_last=thinking_started=0;wakeup=0;
  dg_app_init(&app,(DgHooks){NULL,save,system_action},718361u);
  dg_power_init(&power_state,0,mock.backlight,mock.apo);
 }
@@ -330,10 +330,40 @@ static void test_automatic_off_failure_is_finite(void)
  mock.now+=128u;idle((key_event_t){0,KEYEV_NONE});CHECK(!pending_action && mock.saves==1u && mock.cleanups==1u);
 }
 
+static void test_thinking_progress(void)
+{
+ static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
+ for(uint8_t players=2;players<=3;players++)for(unsigned level=0;level<3;level++){
+  reset();game(players,levels[level]);app.dirty=0;
+  DgGame frozen=app.archive.game;DgMove expected;uint32_t rng;DgAiStats stats;
+  CHECK(dg_ai_choose(&frozen,0,NULL,NULL,&expected,&rng,&stats));
+  power_state.dim_ticks=power_state.off_ticks=UINT32_MAX;mock.rtc_step=5u;
+  cpu_turn();CHECK(app.animation && !app.thinking);
+  CHECK(!memcmp(&app.pending_move,&expected,sizeof expected) && app.pending_rng==rng);
+  CHECK(app.ai_stats.nodes==stats.nodes && app.ai_stats.depth==stats.depth && app.ai_stats.beam==stats.beam && app.ai_stats.legal_moves==stats.legal_moves && app.ai_stats.tt_hits==stats.tt_hits);
+  CHECK(!memcmp(&frozen,&app.archive.game,sizeof frozen) && !mock.saves);
+  CHECK(mock.thinking_phases==7u && mock.updates>=4u);
+  CHECK(power_state.idle_ticks>0u && !power_state.dimmed && !mock.light_writes && !mock.offs);
+  CHECK(mock.starts==0u && mock.enables==0u); /* No per-search timer allocation. */
+ }
+ /* Fixed RTC origin survives midnight and uses 40 ticks per dot phase. */
+ reset();game(2,DG_HARD);app.thinking=1;thinking_started=DG_RTC_DAY-20u;
+ mock.now=19u;CHECK(!cancel_search(NULL) && app.thinking_phase==0 && !mock.updates);
+ mock.now=20u;CHECK(!cancel_search(NULL) && app.thinking_phase==1 && mock.updates==1);
+ mock.now=60u;CHECK(!cancel_search(NULL) && app.thinking_phase==2 && mock.updates==2);
+ mock.now=100u;CHECK(!cancel_search(NULL) && app.thinking_phase==0 && mock.updates==3);
+ CHECK(power_state.idle_ticks>0u && !mock.saves);
+ /* Real foreground busy EXIT bypasses zoom even after CPU clears thinking. */
+ reset();game(3,DG_HARD);app.zoom=1;app.selected=app.cursor;
+ DgGame frozen=app.archive.game;enqueue(KEY_EXIT,KEYEV_DOWN);cpu_turn();
+ CHECK(app.screen==DG_SETUP && app.focus==0 && app.archive.active && !app.animation && !app.thinking);
+ CHECK(!memcmp(&frozen,&app.archive.game,sizeof frozen) && !memcmp(&frozen,&mock.disk.game,sizeof frozen));
+ CHECK(mock.saves==1 && !pending_action && !mock.offs && !mock.menus);
+}
 int main(void)
 {
  test_shift_and_barrier();test_system_order();test_cpu_keys();test_idle_and_pulse();
- test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();
+ test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();test_thinking_progress();
  printf("native shim: %u checks passed; real key/barrier/cancel/system/idle code, no hardware claim\n",checks);
  return 0;
 }

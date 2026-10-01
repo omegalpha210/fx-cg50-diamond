@@ -6,16 +6,18 @@
 #include <string.h>
 
 static uint16_t pixels[224][396],prior[224][396];
-static unsigned frames,calls;
+static unsigned frames,calls,paper_count;
+static UiBox paper_boxes[16];
 static void raster(void *context,int x,int y,int w,int h,uint16_t ink)
 {
  (void)context;
+ if(ink==UI_PAPER && !(x==0 && y==0 && w==396 && h==224)){assert(paper_count<16);paper_boxes[paper_count++]=(UiBox){x,y,w,h};}
  assert(w>0 && h>0 && x>=0 && y>=0 && x+w<=396 && y+h<=224);calls++;
  for(int row=y;row<y+h;row++)for(int col=x;col<x+w;col++)pixels[row][col]=ink;
 }
 static void render(const DgApp *app)
 {
- DgApp before=*app;dg_render(app,&(DgCanvas){NULL,raster});
+ paper_count=0;DgApp before=*app;dg_render(app,&(DgCanvas){NULL,raster});
  assert(!memcmp(app,&before,sizeof before));frames++;
 }
 static void expected_text(int x,int y,const char *s,uint16_t ink,int numerator,int denominator)
@@ -55,9 +57,9 @@ static void strip(const char *const labels[6],const uint16_t backgrounds[6],cons
 }
 static void menu_strip(bool resume,bool setup)
 {
- const char *labels[6]={"SET",resume?"RESUME":"","","RULES","",setup?"PLAY":"NEXT"};
- uint16_t bg[6]={UI_SET,UI_BLUE,0,UI_BLACK,0,setup?UI_RUN:UI_NEXT};
- uint16_t fg[6]={UI_BLACK,UI_WHITE,0,UI_WHITE,0,setup?UI_WHITE:UI_BLACK};strip(labels,bg,fg);
+ const char *labels[6]={!setup && resume?"RESUME":"","","","RULES","",setup?"OPEN":"NEXT"};
+ uint16_t bg[6]={UI_BLUE,0,0,UI_BLACK,0,setup?UI_INK:UI_NEXT};
+ uint16_t fg[6]={UI_WHITE,0,0,UI_WHITE,0,setup?UI_WHITE:UI_BLACK};strip(labels,bg,fg);
 }
 static void game_strip(bool undo,const char *action,bool idle)
 {
@@ -70,7 +72,7 @@ static void blank_strip(void)
 static void box(int x,int y,int w,int h,uint16_t ink,int thick)
 {
  for(int r=0;r<h;r++)for(int c=0;c<w;c++)if(r<thick || r>=h-thick || c<thick || c>=w-thick)
-  assert(pixels[y+r][x+c]==ink);
+  {if(pixels[y+r][x+c]!=ink)fprintf(stderr,"box=%d,%d %dx%d thick=%d pixel=%d,%d expected=%04x actual=%04x\n",x,y,w,h,thick,c,r,ink,pixels[y+r][x+c]);assert(pixels[y+r][x+c]==ink);}
 }
 static bool glyph_pixel(int x,int y,const char *text)
 {
@@ -89,64 +91,56 @@ static void actor(int x,int y,uint8_t player,bool ai)
   int square=dx*dx+dy*dy;if(square>225)continue;
   uint16_t expected=square<=196?ui_piece_color(player):UI_BLACK;
   if(ai && glyph_pixel(x+dx-text_x,dy+5,"AI"))expected=UI_BLACK;
+  if(!ai && (dx*dx+(dy+5)*(dy+5)<=16 ||
+     (dy>=1 && dy<=9 && dx*dx+(dy-9)*(dy-9)<=81)))expected=UI_WHITE;
   assert(pixels[y+dy][x+dx]==expected);
  }
  if(ai)expected_text(text_x,y-5,"AI",UI_BLACK,1,1);
 }
-static void face(int cx,int cy,uint8_t level,uint16_t background)
+static void option_contract(int y,const char *const *names,unsigned count,unsigned selected,const uint16_t *inks)
 {
- /* Independently specified mouth/brow sample masks, plus all disk pixels. */
- static const int brow[10][2]={{-5,-6},{-4,-6},{-3,-5},{-2,-5},{-1,-4},
-                              {1,-4},{2,-4},{3,-5},{4,-5},{5,-6}};
- uint16_t fill=level==DG_EASY?PIECE_GREEN:level==DG_NORMAL?PIECE_YELLOW:PIECE_RED;
- for(int dy=-9;dy<=9;dy++)for(int dx=-9;dx<=9;dx++){
-  int square=dx*dx+dy*dy;
-  uint16_t expected=square>81?background:square>64?UI_BLACK:fill;
-  bool eye=(dy==-3 || dy==-2) && (dx==-4 || dx==-3 || dx==3 || dx==4);
-  bool mouth=level==DG_NORMAL?(dy==3 && dx>=-4 && dx<=4):
-   (dy==(level==DG_EASY?4:2) && dx>=-2 && dx<=2) ||
-   (dy==3 && (dx==-3 || dx==3)) ||
-   (dy==(level==DG_EASY?2:4) && (dx==-4 || dx==4));
-  bool eyebrow=false;
-  if(level==DG_HARD)for(unsigned i=0;i<10;i++)if(dx==brow[i][0] && dy==brow[i][1])eyebrow=true;
-  if(eye || mouth || eyebrow)expected=UI_BLACK;
-  assert(pixels[cy+dy][cx+dx]==expected);
+ int total=0;for(unsigned i=0;i<count;i++)total+=ui_text_width(names[i],1,1)+10;
+ int gap=(228-total)/(int)(count-1),x=146;
+ for(unsigned i=0;i<count;i++){
+  int w=ui_text_width(names[i],1,1)+10;uint16_t ink=inks?inks[i]:UI_BLUE;
+  expected_text(x+5,y+9,names[i],ink,1,1);
+  if(i==selected){box(x,y+4,w,21,ink,1);for(int dx=3;dx<w-3;dx++)assert(pixels[y+23][x+dx]==ink);}
+  assert(x>=146 && x+w<=374);x+=w+gap;
  }
 }
 static void options(DgApp *app)
 {
  static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
- for(uint8_t players=2;players<=3;players++)for(unsigned index=0;index<3;index++)for(uint8_t slot=0;slot<players;slot++){
-  uint8_t level=levels[index];
-  app->screen=DG_SETUP;app->players=players;app->level=level;app->slot=slot;render(app);menu_strip(false,true);
-  for(unsigned i=0;i<3;i++){
-   box(7+(int)i*130,51,122,46,level==levels[i]?UI_FOCUS:UI_LINE,level==levels[i]?2:1);
-   assert(pixels[55][10+i*130]==(level==levels[i]?UI_SELECTED:UI_WHITE));
-  }
-  int width=players==2?187:122,gap=players==2?195:130;
-  for(uint8_t i=0;i<players;i++){
-   box(7+i*gap,131,width,46,slot==i?UI_FOCUS:UI_LINE,slot==i?2:1);
-   assert(pixels[135][10+i*gap]==(slot==i?UI_SELECTED:UI_WHITE));
-  }
-  /* LEVEL and FIRST/HUMAN use the same font scale and centered baseline. */
-  const char *const level_names[3]={"EASY","NORMAL","HARD"};
-  for(unsigned i=0;i<3;i++){
-   const char *name=level_names[i];int x=7+(int)i*130,left=x+(122-ui_text_width(name,3,2)-30)/2;
-   expected_text(left+30,66,name,UI_INK,3,2);
-   assert(left>=x+3 && left+30+ui_text_width(name,3,2)<x+119);
-   face(left+9,74,levels[i],level==levels[i]?UI_SELECTED:UI_WHITE);
-  }
-  const char *const names[3]={"1ST","2ND","3RD"};
-  for(uint8_t i=0;i<players;i++){
-   const char *name=players==2?(i?"AI":"HUMAN"):names[i];
-   expected_text(7+i*gap+(width-ui_text_width(name,3,2))/2,146,name,UI_INK,3,2);
+ static const char *const level_names[3]={"EASY","NORMAL","HARD"};
+ static const char *const first[2]={"HUMAN","AI"},*const slots[3]={"1ST","2ND","3RD"},*const assist_names[2]={"OFF","ON"};
+ static const uint16_t inks[3]={PIECE_GREEN,UI_GOLD,PIECE_RED};
+ for(uint8_t players=2;players<=3;players++)for(unsigned resume=0;resume<3;resume++){
+  assert(dg_new(&app->archive.game,resume==2?(players==2?3:2):players,DG_NORMAL,0,123456));
+  app->archive.active=resume!=0;app->screen=DG_SETUP;app->players=players;
+  unsigned count=resume==1?5u:4u;
+  for(unsigned index=0;index<3;index++)for(uint8_t slot=0;slot<players;slot++)for(uint8_t assist=0;assist<2;assist++)for(unsigned focus=0;focus<count;focus++){
+   app->level=levels[index];app->slot=slot;app->archive.assist=assist;app->focus=(uint8_t)focus;
+   render(app);menu_strip(false,true);
+   for(unsigned row=0;row<count;row++){
+    int y=(count==5?30:34)+(int)row*(count==5?27:34),h=count==5?25:29;char number[4];
+    snprintf(number,sizeof number,"%u",row+1);expected_text(20,y+9,number,UI_MUTED,1,1);
+    unsigned offset=resume==1?1u:0u;
+    const char *label=row<offset?"RESUME":row==offset?"NEW GAME":row==offset+1?"DIFFICULTY":row==offset+2?(players==2?"FIRST":"HUMAN"):"ASSIST";
+    expected_text(43,y+9,label,UI_INK,1,1);
+    int thick=row==focus?2:1;uint16_t edge=row==focus?UI_BLUE:UI_LINE;
+    for(int r=0;r<h;r++)for(int c=0;c<376;c++)if(r<thick || r>=h-thick || c<thick || c>=376-thick){
+     /* NUM GAME compact options occupy the row's bottom value-area border. */
+     if(count==5 && row>offset && r>=23 && c>=136 && c<364)continue;
+     assert(pixels[y+r][10+c]==edge);
+    }
+    assert(pixels[y+3][13]==(row==focus?UI_SELECTED:UI_WHITE));
+    if(row==offset+1)option_contract(y,level_names,3,index,inks);
+    if(row==offset+2)option_contract(y,players==2?first:slots,players,slot,NULL);
+    if(row==offset+3)option_contract(y,assist_names,2,assist,NULL);
+   }
   }
  }
- for(uint8_t assist=0;assist<2;assist++){
-  app->screen=DG_SETTINGS;app->archive.assist=assist;render(app);blank_strip();
-  box(7,61,187,46,assist?UI_LINE:UI_FOCUS,assist?1:2);
-  box(202,61,187,46,assist?UI_FOCUS:UI_LINE,assist?2:1);
- }
+ app->focus=0;
 }
 static void relocate(DgGame *game,uint8_t player,int destination)
 {
@@ -206,8 +200,9 @@ static void board_bounds(DgApp *app)
   app->zoom=zoom;app->cursor=n;int x,y;dg_screen_position(app,n,&x,&y);
   int radius=zoom?12:9;
   assert(x-radius-2>=4 && x+radius+2<392 && y-radius>=26 && y+radius<204);
-  assert(!overlap(x-radius-2,y-radius,2*radius+5,2*radius+1,6,30,99,17));
-  assert(!overlap(x-radius-2,y-radius,2*radius+5,2*radius+1,284,30,106,51));
+  /* Compact status panels must leave every focused cursor visible. */
+  assert(!overlap(x-radius-2,y-radius,2*radius+5,2*radius+1,6,30,ui_text_width("ASSIST OFF",1,1)+4,15));
+  assert(!overlap(x-radius-2,y-radius,2*radius+5,2*radius+1,386-ui_text_width("YELLOW 10/10",1,1),30,ui_text_width("YELLOW 10/10",1,1)+4,45));
   render(app);game_strip(false,"SELECT",true);
   /* All four cursor edges survive clipping and HUD overlays at every node. */
   assert(pixels[y-radius][x]==BOARD_BLUE && pixels[y+radius][x]==BOARD_BLUE);
@@ -226,11 +221,14 @@ static void notices(DgApp *app)
   const char *visible=messages[i];
   if(!strcmp(visible,"CPU HAS NO MOVE"))visible="AI HAS NO MOVE";
   else if(!strcmp(visible,"CPU MOVE REJECTED"))visible="AI MOVE REJECTED";
-  int width=ui_text_width(visible,1,1)+12;assert(width<300);
+  UiNotice notice;ui_notice_layout(app,&notice);UiBox b=notice.box;
+  assert(b.x==6 && b.y==84 && b.w<=107 && b.h<=54);
   for(int y=0;y<204;y++)for(int x=0;x<396;x++)
-   if(!(x>=6 && x<6+width && y>=28 && y<47))assert(pixels[y][x]==prior[y][x]);
-  expected_text(12,32,visible,UI_RUN,1,1);
-  for(int y=28;y<47;y++)assert(pixels[y][6]==UI_RUN);
+   if(!(x>=b.x && x<b.x+b.w && y>=b.y && y<b.y+b.h))assert(pixels[y][x]==prior[y][x]);
+  for(unsigned row=0;row<notice.count;row++)expected_text(b.x+2,b.y+2+(int)row*13,notice.line[row],UI_RUN,1,1);
+  /* Visible spelling is preserved through wrapping, including CPU -> AI. */
+  char joined[64]="";for(unsigned row=0;row<notice.count;row++){if(row)strcat(joined," ");strcat(joined,notice.line[row]);}
+  assert(!strcmp(joined,visible));
  }
  app->notice[0]=0;
 }
@@ -269,16 +267,89 @@ static void hud_bounds(DgApp *app)
    char config[20],counter[20];snprintf(config,sizeof config,"%uP / %s",(unsigned)players,level_name);
    snprintf(counter,sizeof counter,"T %lu",(unsigned long)UINT32_MAX);
    int cw=ui_text_width(config,1,1),cx=(396-cw)/2,tx=388-ui_text_width(counter,1,1);
-   assert(50+ui_text_width(label,1,1)<cx && cx+cw<tx);
-   expected_text(8,6,"TURN",UI_MUTED,1,1);expected_text(50,6,label,UI_INK,1,1);
-   expected_text(cx,6,config,UI_MUTED,1,1);expected_text(tx,6,counter,UI_MUTED,1,1);
+   int actor_x=8+ui_text_width("TURN : ",1,1)+1;
+   assert(actor_x+ui_text_width(label,1,1)<cx && cx+cw<tx);
+   expected_text(8,6,"TURN :",UI_INK,1,1);expected_text(actor_x,6,label,ui_actor_color(current),1,1);
+   expected_text(cx,6,config,ui_level_color(level),1,1);expected_text(tx,6,counter,UI_MUTED,1,1);
+  }
+ }
+}
+static bool boxes_overlap(UiBox a,UiBox b)
+{return overlap(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h);}
+static void overlay_bounds(DgApp *app)
+{
+ /* Whole overview board bbox includes the largest cursor ticks, not just holes. */
+ UiBox board={396,224,0,0};int right=0,bottom=0;app->zoom=0;
+ for(int n=0;n<DG_NODES;n++){
+  int x,y;dg_screen_position(app,n,&x,&y);
+  if(x-11<board.x)board.x=x-11;if(y-9<board.y)board.y=y-9;
+  if(x+12>right)right=x+12;if(y+10>bottom)bottom=y+10;
+ }
+ board.w=right-board.x;board.h=bottom-board.y;
+ assert(board.x==115 && board.y==27 && right==282 && bottom==202);
+ assert(!boxes_overlap(board,(UiBox){0,0,396,24}));
+ UiBox thinking=ui_thinking_box();assert(thinking.x==6 && thinking.y==57 && thinking.w==ui_text_width("THINKING...",1,1)+4 && thinking.h==15);
+ for(uint8_t zoom=0;zoom<2;zoom++)for(uint8_t players=2;players<=3;players++)for(uint8_t assist=0;assist<2;assist++){
+  assert(dg_new(&app->archive.game,players,DG_NORMAL,0,123456));
+  app->screen=DG_GAME;app->modal=DG_MODAL_NONE;app->zoom=zoom;app->cursor=36;app->selected=DG_NONE;
+  app->archive.assist=assist;app->thinking=1;
+  for(uint8_t phase=0;phase<3;phase++){
+   app->thinking_phase=phase;render(app);assert(paper_count==(unsigned)players+2u);
+   assert(paper_boxes[0].w==ui_text_width(assist?"ASSIST ON":"ASSIST OFF",1,1)+4 && paper_boxes[0].h==15);
+   for(unsigned i=0;i<paper_count;i++){
+    UiBox b=paper_boxes[i];assert(b.w<=107 && b.h==15);
+    if(!zoom){assert(!boxes_overlap(b,board));assert(b.x+b.w<=board.x-2 || b.x>=right+2);}
+   }
+   static const char *const phases[3]={"THINKING.","THINKING..","THINKING..."};
+   for(int dy=0;dy<thinking.h;dy++)for(int dx=0;dx<thinking.w;dx++){
+    uint16_t expected=glyph_pixel(dx-2,dy-2,phases[phase])?UI_BLUE:UI_PAPER;
+    assert(pixels[thinking.y+dy][thinking.x+dx]==expected);
+   }
+  }
+  app->thinking_phase=2;render(app);memcpy(prior,pixels,sizeof prior);DgArchive frozen=app->archive;uint32_t new_rng=app->new_rng;
+  assert(!dg_app_thinking_tick(app,119));assert(dg_app_thinking_tick(app,120) && !app->thinking_phase);
+  paper_count=0;dg_render_thinking(app,&(DgCanvas){NULL,raster});assert(paper_count==1 && !memcmp(&paper_boxes[0],&thinking,sizeof thinking));
+  for(int y=0;y<224;y++)for(int x=0;x<396;x++){
+   if(x>=thinking.x && x<thinking.x+thinking.w && y>=thinking.y && y<thinking.y+thinking.h)
+    assert(pixels[y][x]==(glyph_pixel(x-thinking.x-2,y-thinking.y-2,"THINKING.")?UI_BLUE:UI_PAPER));
+   else assert(pixels[y][x]==prior[y][x]);
+  }
+  assert(!memcmp(&frozen,&app->archive,sizeof frozen) && app->new_rng==new_rng);
+  app->thinking=0;assert(!dg_app_thinking_tick(app,160));
+  snprintf(app->notice,sizeof app->notice,"INVALID SAVE - FRESH SETUP");UiNotice notice;ui_notice_layout(app,&notice);
+  assert(notice.box.w<=107 && notice.box.h<=54);
+  if(!zoom)assert(!boxes_overlap(notice.box,board) && notice.box.x+notice.box.w<=board.x-2);
+  render(app);app->notice[0]=0;
+ }
+ app->zoom=0;app->thinking=0;
+ printf("Overview board bbox: %d,%d %dx%d; THINKING bbox: %d,%d %dx%d; panels measured +4 padding, warnings <=107x54\n",board.x,board.y,board.w,board.h,thinking.x,thinking.y,thinking.w,thinking.h);
+}
+static void goal_colors(DgApp *app)
+{
+ for(uint8_t players=2;players<=3;players++){
+  assert(dg_new(&app->archive.game,players,DG_NORMAL,0,123456));
+  DgGame *g=&app->archive.game;memset(g->pos.board,0,sizeof g->pos.board);
+  const unsigned counts[4]={0,5,3,4};
+  for(uint8_t who=DG_RED;who<=DG_GREEN;who++)if(who!=DG_YELLOW || players==3){
+   unsigned used=0;for(int n=0;n<DG_NODES && used<counts[who];n++)if(dg_in_camp(n,dg_goal[who])){assert(!g->pos.board[n]);g->pos.board[n]=who;used++;}
+   for(int n=0;n<DG_NODES && used<10;n++)if(!g->pos.board[n] && !dg_in_camp(n,dg_goal[DG_RED]) && !dg_in_camp(n,dg_goal[DG_YELLOW]) && !dg_in_camp(n,dg_goal[DG_GREEN])){g->pos.board[n]=who;used++;}
+   assert(used==10);
+  }
+  assert(dg_game_valid(g));app->screen=DG_GAME;app->modal=0;app->selected=DG_NONE;app->zoom=0;render(app);
+  unsigned row=0;
+  for(uint8_t who=DG_RED;who<=DG_GREEN;who++)if(who!=DG_YELLOW || players==3){
+   char text[24];snprintf(text,sizeof text,"%s %u/10",who==DG_RED?"YOU":who==DG_YELLOW?"YELLOW":"GREEN",counts[who]);
+   int w=ui_text_width(text,1,1),x=388-w,y=32+(int)row++*15;
+   expected_text(x,y,text,who==DG_YELLOW?UI_GOLD:who==DG_RED?PIECE_RED:PIECE_GREEN,1,1);
+   for(int dy=-2;dy<13;dy++)for(int dx=-2;dx<w+2;dx++)
+    assert(pixels[y+dy][x+dx]==(glyph_pixel(dx,dy,text)?ui_actor_color(who):UI_PAPER));
   }
  }
 }
 int main(void)
 {
  assert(ui_text_width("RESTART",1,1)==57 && ui_text_width("SELECT",1,1)==48);
- assert(UI_RESTART==0xffe0 && UI_UNDO==0xf81f && UI_SET==0x37e6 && UI_NEXT==0x07ff && UI_RUN==0xf800);
+ assert(UI_RESTART==0xffe0 && UI_UNDO==0xf81f && UI_NEXT==0x07ff && UI_RUN==0xf800);
  DgApp app;dg_app_init(&app,(DgHooks){0},123456);
  for(uint8_t players=2;players<=3;players++){
   app.players=players;render(&app);menu_strip(false,false);
@@ -289,14 +360,14 @@ int main(void)
   actor(68,105,DG_RED,false);actor(132,105,DG_GREEN,true);
   actor(247,105,DG_RED,false);actor(295,105,DG_YELLOW,true);actor(343,105,DG_GREEN,true);
  }
- app.archive.active=1;render(&app);menu_strip(true,false);options(&app);
+ assert(dg_new(&app.archive.game,3,DG_NORMAL,1,123456));app.archive.active=1;app.players=2;render(&app);menu_strip(true,false);options(&app);
  app.screen=DG_RULES;
  for(uint8_t offset=0;offset<=12;offset++){
   app.rules_scroll=offset;render(&app);blank_strip();int thumb=151*9/21,top=35+offset*(151-thumb)/12;
   for(int y=35;y<186;y++)assert(pixels[y][383]==(y>=top && y<top+thumb?UI_BLUE:UI_LINE));
  }
  assert(dg_new(&app.archive.game,3,DG_EASY,0,123456));app.screen=DG_GAME;app.archive.assist=1;
- board_bounds(&app);board_fill(&app);notices(&app);hud_bounds(&app);
+ board_bounds(&app);board_fill(&app);notices(&app);hud_bounds(&app);overlay_bounds(&app);goal_colors(&app);
  assert(dg_new(&app.archive.game,3,DG_EASY,0,123456));
  /* Existing undo-enabled condition at the end of a full human decision. */
  DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
@@ -309,6 +380,6 @@ int main(void)
  app.selected=moves[0].to;render(&app);game_strip(true,"MOVE",true);
  app.selected=DG_NONE;app.thinking=1;render(&app);game_strip(false,"",false);app.thinking=0;
  modal_bounds(&app);
- printf("Renderer geometry PASS: %u immutable frames, %u bounded rectangles; exact softkeys, faces/AI icons, solid discs/Assist, fonts, selectors, HUD/cursors, all rule offsets, notices and modals\n",frames,calls);
+ printf("Renderer geometry PASS: %u immutable frames, %u bounded rectangles; exact softkeys, profile/AI icons, solid discs/Assist, fonts, selectors, HUD/cursors, all rule offsets, notices and modals\n",frames,calls);
  return 0;
 }

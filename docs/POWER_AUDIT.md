@@ -63,7 +63,11 @@ Reference status was captured before and after inspection. NUM GAME and SOKOBAN 
 
 `tests/test_power.c` covers 48 combinations of valid and failed/unsupported scalar values, exact dim/APO boundaries, input priority, one restoration, midnight/fractional RTC accumulation and finite repeat policy. Existing malformed-state checks remain enabled.
 
-`tests/test_native.c` compiles the actual native static functions with controlled SDK/storage doubles. Its 49,425 checks include all 48 OS query combinations in the OS world, refresh after MENU, dim/restore values and call counts, one wake gameplay action, internal redraw/warning/save/animation/search activity, flag-only ISR behavior, all three difficulty profiles' system-key cancellation in 2P/3P, successful checkpoint-before-off ordering, and finite save/cleanup-failure recovery. The `power` and `native` CTest cases pass in both strict Release and UBSan builds with assertions enabled. The target build compiles with strict warnings and its package checks pass; the final release report records the exact rebuilt artifact.
+`tests/test_native.c` compiles the actual native static functions with controlled SDK/storage doubles. Its beta.1 49,425 checks include all 48 OS query combinations in the OS world, refresh after MENU, dim/restore values and call counts, one wake gameplay action, internal redraw/warning/save/animation/search activity, flag-only ISR behavior, all three difficulty profiles' system-key cancellation in 2P/3P, successful checkpoint-before-off ordering, and finite save/cleanup-failure recovery. The `power` and `native` CTest cases pass in both strict Release and UBSan builds with assertions enabled. The target build compiles with strict warnings and its package checks pass; the final release report records the exact rebuilt artifact.
+
+Beta.2 preserves these cases and adds clock-stepped visual checks; the current
+count is in [BETA_VALIDATION.md](BETA_VALIDATION.md). THINKING redraws use the
+existing foreground hook and do not count as input or change power state semantics.
 
 **HARDWARE TEST REQUIRED:** actual OS query values across installed OS versions; 30/60/180-second LCD dim; exact brightness restoration after physical input; 10/60-minute APO and power-on return; MENU and SHIFT+AC/ON; search cancellation before APO; timer/RTC resource availability; long play with animation and highlights without input. Host timing is not calculator timing.
 

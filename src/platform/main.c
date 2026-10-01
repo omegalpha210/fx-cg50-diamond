@@ -14,7 +14,7 @@ static volatile int wakeup;
 static int scheduler=-1,pending_action;
 static bool timer_active,rtc_active,shift_pending,brightness_saved;
 static uint16_t saved_brightness;
-static uint32_t blocked,animation_last;
+static uint32_t blocked,animation_last,thinking_started;
 /* Match libfxcg's scalar ABI: duration returns one char in 30-second units. */
 char dg_os_backlight_duration(void);
 int dg_os_apo_minutes(void);
@@ -92,7 +92,20 @@ static bool cancel_search(void *context)
   if(pending_action)return true;
   if(event.type==KEYEV_NONE)break;
  }
+ uint32_t now=rtc_ticks(),elapsed=now>=thinking_started?now-thinking_started:DG_RTC_DAY-thinking_started+now;
+ if(dg_app_thinking_tick(&app,elapsed)){
+  DgCanvas canvas={NULL,rect};dg_render_thinking(&app,&canvas);dupdate();
+ }
  return false;
+}
+static void cpu_turn(void)
+{
+ app.thinking=1;app.thinking_phase=0;thinking_started=rtc_ticks();draw();pending_action=0;
+ (void)dg_app_cpu(&app,cancel_search,NULL);
+ /* dg_app_cpu cleared thinking already; busy EXIT still bypasses zoom. */
+ if(pending_action==DGK_EXIT)(void)dg_app_to_setup(&app);
+ else if(pending_action)(void)dg_app_key(&app,pending_action);
+ pending_action=0;barrier();animation_last=rtc_ticks();draw();
 }
 int main(void)
 {
@@ -113,10 +126,7 @@ int main(void)
  for(;;){
   bool cpu=app.screen==DG_GAME && !app.modal && !app.animation && !app.archive.game.pos.winner && dg_current(&app.archive.game)!=DG_RED;
   if(cpu){
-   app.thinking=1;draw();pending_action=0;
-   (void)dg_app_cpu(&app,cancel_search,NULL);
-   if(pending_action){(void)dg_app_key(&app,pending_action);pending_action=0;}
-   barrier();animation_last=rtc_ticks();draw();continue;
+   cpu_turn();continue;
   }
   wakeup=0;
   key_event_t event=keydev_read(keydev_std(),true,(timer_active || rtc_active)?&wakeup:NULL);

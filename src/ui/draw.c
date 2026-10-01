@@ -67,11 +67,11 @@ void ui_softkeys(DgPainter *p,const char *const labels[6])
  for(int i=0;i<6;i++){
   const char *s=labels[i];if(!s[0])continue;
   uint16_t bg=UI_BLUE,fg=UI_WHITE;
-  if(!strcmp(s,"SET")){bg=UI_SET;fg=UI_BLACK;}
-  else if(!strcmp(s,"NEXT")){bg=UI_NEXT;fg=UI_BLACK;}
+  if(!strcmp(s,"NEXT")){bg=UI_NEXT;fg=UI_BLACK;}
   else if(!strcmp(s,"UNDO")){bg=UI_UNDO;fg=UI_BLACK;}
   else if(!strcmp(s,"RESTART")){bg=UI_RESTART;fg=UI_BLACK;}
   else if(!strcmp(s,"RULES"))bg=UI_BLACK;
+  else if(!strcmp(s,"OPEN"))bg=UI_INK;
   else if(!strcmp(s,"PLAY") || !strcmp(s,"MOVE") || !strcmp(s,"SELECT") || !strcmp(s,"NEW"))bg=UI_RUN;
   ui_rect(p,i*66+1,205,64,18,bg);ui_center(p,i*66+1,209,64,s,fg,1,1);
  }
@@ -92,10 +92,19 @@ void ui_ring(DgPainter *p,int x,int y,int radius,uint16_t ink)
 }
 uint16_t ui_piece_color(uint8_t player)
 {return player==DG_RED?PIECE_RED:player==DG_YELLOW?PIECE_YELLOW:PIECE_GREEN;}
+uint16_t ui_actor_color(uint8_t player)
+{return player==DG_YELLOW?UI_GOLD:ui_piece_color(player);}
+uint16_t ui_level_color(uint8_t level)
+{return level==DG_EASY?PIECE_GREEN:level==DG_NORMAL?UI_GOLD:PIECE_RED;}
 void ui_piece(DgPainter *p,int x,int y,int radius,uint8_t player,bool human)
 {
  ui_disc(p,x,y,radius,UI_BLACK);ui_disc(p,x,y,radius-1,ui_piece_color(player));
- if(!human)ui_center(p,x-radius,y-UI_FONT_HEIGHT/2,2*radius+1,"AI",UI_BLACK,1,1);
+ if(human){
+  ui_disc(p,x,y-5,4,UI_WHITE);
+  /* Integer upper-body silhouette: rounded shoulders, flat lower edge. */
+  DgPainter shoulders=*p;shoulders.top=y+1;shoulders.bottom=y+10;
+  ui_disc(&shoulders,x,y+9,9,UI_WHITE);
+ }else ui_center(p,x-radius,y-UI_FONT_HEIGHT/2,2*radius+1,"AI",UI_BLACK,1,1);
 }
 const char *ui_level_label(uint8_t level)
 {

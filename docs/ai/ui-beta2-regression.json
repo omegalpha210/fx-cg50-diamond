@@ -1,0 +1,41 @@
+{
+  "baseline_public_commit": "f7e111c9c2a12243275875473fbbc30ecb34d628",
+  "candidate_tag": "v0.1.0-beta.2",
+  "excluded_fields": [
+    "host_seconds"
+  ],
+  "groups": {
+    "2p_tournament": {
+      "cases": 300,
+      "semantic_sha256": "dc27086669feb7e3f8dec67d838f2b43073309278fcd2d68bfa190c4251c0a66",
+      "exact_baseline_match": true
+    },
+    "3p_mixed": {
+      "cases": 144,
+      "semantic_sha256": "93be19a2556c6ff47e33fedeb88f1bf237ed3074d849eaa355d392e17bea6223",
+      "exact_baseline_match": true
+    },
+    "3p_control": {
+      "cases": 144,
+      "semantic_sha256": "d0754d1d9e4867fbee36a5dbfe9f1c89759dd30829f5e2e0b9e8096ae30b9b10",
+      "exact_baseline_match": true
+    },
+    "2p_followup": {
+      "cases": 2,
+      "semantic_sha256": "e694b50cbb3251482b024ff0aea5347eb552a95012b98348cf27fcaaf053ce9a",
+      "exact_baseline_match": true
+    },
+    "3p_followup": {
+      "cases": 3,
+      "semantic_sha256": "e754ba9f1602e88c782d04a333d62a3b40b8b68feb6e41f9f69878b68052d73e",
+      "exact_baseline_match": true
+    },
+    "choices": {
+      "cases": 192,
+      "semantic_sha256": "906a252fa7115c70f438c28fc2538fa8ba59e6afc6a7eeadc56d1748062833c5",
+      "exact_baseline_match": true
+    }
+  },
+  "easy_unit_goldens": 720,
+  "ai_native_visual_profiles_unchanged": 6
+}

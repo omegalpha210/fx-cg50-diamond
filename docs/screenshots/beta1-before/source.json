@@ -1,0 +1,12 @@
+{
+  "source_public_commit": "f7e111c9c2a12243275875473fbbc30ecb34d628",
+  "source_local_commit": "42e5a55e49c53dd2a4cf5a291ec55c076b2817b5",
+  "renderer": "dg_render, 396x224, before beta.2 edits",
+  "sha256": {
+    "player.png": "60afad47b823437d9cbb77d41d722c968732bc8e78bbc91ba2d31eaf6981d5d9",
+    "setup-3p.png": "55c2637cae9a3f13463fd197c03f6a03ec900cca6cf4f1d0d9ad5f9fb9adb443",
+    "3p-overview.png": "7189db2bea26b933236910a2b0c232f9b89536ad48a85523e3ae1aac940c45b9",
+    "ai-thinking.png": "5b0c90fe1137b68f7c6a2e0b16d92f5c541e44d7d94d1a4c508342e9384a9f67",
+    "warning.png": "55d63ecdcd59fdd71732354b4c78eca4bdd8f5c6a0d11dd3f3e54c161e13bf74"
+  }
+}

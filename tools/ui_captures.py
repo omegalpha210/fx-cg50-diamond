@@ -48,15 +48,28 @@ def caption(draw, position, label):
 
 SCENES = [
     "player", "player-2p", "setup-2p-easy", "setup-2p-normal", "setup-2p-hard",
-    "setup-3p", "settings", "rules", "2p-overview", "3p-overview",
+    "setup-3p", "rules", "2p-overview", "3p-overview",
     "piece-readability", "piece-readability-zoom", "piece-selection",
     "assist-on", "assist-off", "zoom", "zoom-assist-off", "multi-jump",
     "restart", "undo-ready", "ai-thinking", "ai-animation", "warning",
     "result", "result-normal", "result-green-ai", "result-yellow-ai",
     "result-board", "player-resume", "move-with-undo", "rules-controls",
+    "player-resume-2p", "player-resume-3p", "player-resume-saved-3p-tile-2p",
+    "player-resume-saved-2p-tile-3p", "setup-2p-no-resume", "setup-3p-no-resume",
+    "setup-2p-resume", "setup-3p-resume", "setup-2p-mismatch", "setup-3p-mismatch",
+    "setup-2p-first-human", "setup-2p-first-ai", "setup-3p-human-1st",
+    "setup-3p-human-2nd", "setup-3p-human-3rd", "setup-2p-assist-off",
+    "setup-2p-assist-on", "setup-3p-assist-off", "setup-3p-assist-on",
+    "hud-human-2p-easy", "hud-yellow-3p-normal", "hud-green-3p-hard",
+    "thinking-1", "thinking-2", "thinking-3", "thinking-zoom-1", "thinking-zoom-2",
+    "thinking-zoom-3", "zoom-unselected", "selected-overview", "selected-zoom",
+    "warning-long", "warning-zoom",
 ]
 subprocess.run([str(ROOT / "build/host/capture"), "docs/screenshots"], cwd=ROOT, check=True)
-for path in CAPTURES.glob("*.ppm"):
+frames = list(CAPTURES.glob("*.ppm"))
+for obsolete in ["settings.png", "level-faces.png"]:
+    (CAPTURES / obsolete).unlink(missing_ok=True)
+for path in frames:
     with Image.open(path) as original:
         original.save(path.with_suffix(".png"))
     path.unlink()
@@ -80,10 +93,23 @@ sheet([[(name, CAPTURES / f"{name}.png") for name in SCENES[i:i + 3]]
 sheet([[(f"{players} / {level.upper()}", CAPTURES / f"setup-{players}-{level}.png")
         for level in ["easy", "normal", "hard"]] for players in ["2p", "3p"]],
       CAPTURES / "level-selection-sheet.png")
-# Integer nearest-neighbor enlargement preserves actual face/text pixels.
-with Image.open(CAPTURES / "setup-2p-normal.png") as frame:
-    frame.crop((3, 28, 393, 108)).resize((1170, 240), Image.Resampling.NEAREST).save(
-        CAPTURES / "level-faces.png")
+sheet([[("NO RESUME / 2P", CAPTURES / "setup-2p-no-resume.png"),
+        ("MATCHING RESUME / 2P", CAPTURES / "setup-2p-resume.png")],
+       [("NO RESUME / 3P", CAPTURES / "setup-3p-no-resume.png"),
+        ("MATCHING RESUME / 3P", CAPTURES / "setup-3p-resume.png")]], CAPTURES / "setup-rows-sheet.png")
+sheet([[(f"THINKING / phase {phase}", CAPTURES / f"thinking-{phase}.png")
+        for phase in [1, 2, 3]]], CAPTURES / "thinking-phases.png")
+with Image.open(CAPTURES / "player.png") as frame:
+    frame.crop((45, 86, 154, 124)).resize((654, 228), Image.Resampling.NEAREST).save(
+        CAPTURES / "player-icons.png")
+POLISH_BEFORE = CAPTURES / "beta1-before"
+if POLISH_BEFORE.exists():
+    pairs = [("PLAYER", "player", "player"), ("SETUP", "setup-3p", "setup-3p-resume"),
+             ("HUD", "3p-overview", "hud-yellow-3p-normal"),
+             ("THINKING", "ai-thinking", "thinking-3"), ("WARNING", "warning", "warning-long")]
+    sheet([[(f"{label} / beta.1", POLISH_BEFORE / f"{old}.png"),
+            (f"{label} / beta.2", CAPTURES / f"{new}.png")] for label, old, new in pairs],
+          CAPTURES / "ui-polish-before-after.png")
 
 PALETTE = {
     "red": (28 * 255 // 31, 3 * 255 // 31, 3 * 255 // 31),
@@ -148,4 +174,4 @@ if (BEFORE / "piece-samples.csv").exists():
 else:
     print("Frozen own before-fill samples absent; current renderer captures are complete.")
 
-print("37 current actual-renderer frames; public-safe level, piece and overview sheets")
+print(f"{len(frames)} current actual-renderer frames; public-safe setup, phase, profile, piece and overview sheets")

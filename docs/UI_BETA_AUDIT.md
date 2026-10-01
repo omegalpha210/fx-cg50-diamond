@@ -1,4 +1,8 @@
-# Beta UI change audit
+# Beta.1 UI change audit (historical)
+
+This records v0.1.0-beta.1. Current UI and captures are described in
+[UI_POLISH_BETA2.md](UI_POLISH_BETA2.md). Numbered setup rows replace the faces
+in beta.2; the measurements below describe the earlier release.
 
 This pass implements the requested three-level presentation and calculator
 readability changes on the common host/native renderer. The baseline drawing
@@ -58,7 +62,7 @@ The driver checks piece-count-valid fixtures and legal representative routes.
 It exports crop centers through `dg_screen_position()`, so Python does not
 reconstruct board geometry or draw replacement UI pixels.
 
-- [All three level faces](screenshots/level-faces.png) is a nearest-neighbor
+- [All three level faces](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.1/docs/screenshots/level-faces.png) is a nearest-neighbor
   enlarged crop from the actual NORMAL-selected 2P setup frame.
 - [Every level selected in both modes](screenshots/level-selection-sheet.png)
   shows six complete setup frames.

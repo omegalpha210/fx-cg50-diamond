@@ -15,7 +15,7 @@ static void legacy(void)
   assert(archive.game.level==level);
   assert(dg_encode(&archive,encoded,sizeof encoded)==size && !memcmp(data,encoded,size));
   DgApp app;dg_app_init(&app,(DgHooks){0},1);app.archive=archive;
-  assert(dg_app_key(&app,DGK_F2) && app.screen==DG_GAME);
+  assert(dg_app_key(&app,DGK_F1) && app.screen==DG_GAME);
   assert(app.level==level && app.archive.game.level==level);
  }
 }

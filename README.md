@@ -6,16 +6,16 @@ A native Korean 73-hole Diamond Game. Play RED against GREEN in two-player
 mode, or against independent GREEN and YELLOW AI players in three-player mode.
 Move ten equal pieces into the opposite camp with steps and chained jumps.
 
-[한국어](README_KO.md) · [Download beta](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.1) · [Rules](docs/GAME_RULES.md)
+[한국어](README_KO.md) · [Download beta](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2) · [Rules](docs/GAME_RULES.md)
 
 ![Three-player game, actual shared renderer](docs/screenshots/3p-overview.png)
 
 **Experimental beta — HARDWARE TEST REQUIRED.** Host tests and package checks
 pass; calculator display, persistence, power behavior and AI latency still need
-the [28 hardware checks](docs/HARDWARE_RETEST.md).
+the [32 hardware checks](docs/HARDWARE_RETEST.md).
 
 - **2P / 3P:** the human is always RED. Choose the first player or your turn slot.
-- **EASY / NORMAL / HARD:** green smile, yellow neutral face, red angry face.
+- **EASY / NORMAL / HARD:** green / readable gold / red labels in numbered setup rows.
   EASY uses seeded heuristic choices; NORMAL uses a small bounded search; HARD
   uses a larger bounded search. Two-player search uses alpha-beta; three-player search
   uses MaxN with each AI maximizing its own score. [Measured audit](docs/AI_DIFFICULTY_AUDIT.md).
@@ -28,12 +28,12 @@ the [28 hardware checks](docs/HARDWARE_RETEST.md).
   before MENU/OFF/APO. [Implementation and test limits](docs/POWER_AUDIT.md).
 
 ![PLAYER](docs/screenshots/player.png)
-![Three difficulty faces](docs/screenshots/level-faces.png)
+![Numbered GAME SETUP with matching RESUME](docs/screenshots/setup-3p-resume.png)
 
 ## Install
 
 Download `DIAMOND.g3a` and `SHA256SUMS.txt` from the
-[beta release](https://github.com/omegalpha210/fx-cg50-diamond/releases).
+[beta release](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2).
 Verify the checksum, copy the G3A to the fx-CG50 storage root over USB, safely
 disconnect, and launch DIAMOND in the CASIO Main Menu.
 
@@ -41,11 +41,20 @@ disconnect, and launch DIAMOND in the CASIO Main Menu.
 shasum -a 256 -c SHA256SUMS.txt
 ```
 
-PLAYER defaults to 3P. EXE/F6 opens GAME SETUP. LEFT/RIGHT clamps through
-EASY → NORMAL → HARD; DOWN selects FIRST (HUMAN/AI in 2P) or HUMAN
-(1ST/2ND/3RD in 3P). EXE/F6 starts. F1 SET changes global ASSIST;
-F2 RESUME appears for an unfinished saved game. Resume bypasses setup and
-preserves the saved difficulty, turn order, RNG and undo snapshot.
+PLAYER defaults to 3P. EXE/F6 NEXT opens GAME SETUP. An unfinished save enables
+F1 RESUME globally, even when the other player-count tile is selected. F2 stays blank.
+The red circles contain white profile silhouettes; AI circles retain centered AI text.
+
+GAME SETUP uses numbered rows: optional matching RESUME, NEW GAME, DIFFICULTY,
+FIRST (2P) or HUMAN (3P), and ASSIST last. UP/DOWN moves row focus.
+LEFT/RIGHT clamps EASY → NORMAL → HARD, HUMAN/AI first, 1ST/2ND/3RD human slot,
+or OFF/ON Assist. EXE/F6 OPEN resumes only on RESUME; every other row starts a
+new game with the current settings. RESUME retains saved difficulty, turn order,
+CPU order, seed/RNG and undo; Assist is the global preference. F4 RULES remains available.
+
+TURN actors and full goal fractions use RED / gold / GREEN. The entire centered
+mode/difficulty label uses green / gold / red. During search, fixed-origin
+THINKING dots cycle every 312.5ms without consuming RNG or resetting idle.
 
 ## Controls
 
@@ -53,7 +62,7 @@ preserves the saved difficulty, turn order, RNG and undo snapshot.
 |---|---|
 | Arrows | Move cursor in overview/zoom; change menu choices |
 | EXE / F6 | Select your RED piece, then commit a legal destination |
-| EXIT | Cancel selection; otherwise checkpoint and return to setup |
+| EXIT | Deselect → zoom out → checkpoint and return to setup |
 | F1 | Confirm restart |
 | F2 | Undo one human decision and all following AI replies |
 | F4 | Read scrollable rules |
@@ -92,6 +101,8 @@ committed source assets build without it. [Development](docs/DEVELOPMENT.md),
 [validation](docs/BETA_VALIDATION.md), [memory](docs/MEMORY.md),
 [actual renderer captures](docs/screenshots/README.md), and
 [publication provenance](docs/PUBLICATION.md) record the beta's evidence.
+[UI polish audit](docs/UI_POLISH_BETA2.md) records the numbered rows, dot animation,
+resume/EXIT transition tests and overlay geometry.
 Host milliseconds are not fx-CG50 timings; this AI is bounded, selective search.
 
 ## Rules and license

@@ -1,9 +1,17 @@
 {
+  "src/ai/ai.c": "8f34e01be64344dbc3039c2d3de69ef6c8374f889790bd23d43a1d9f3d5fb371",
   "src/core/board.c": "f601327da584c9ac936382fe34371018ac9e9f69c7d46f5b6b87fc32d69b9736",
   "src/core/engine.c": "00c2ef61b1015565810adac26bad2642bdd2a9e8f4e3851040ec5b8512e0bf85",
+  "src/game/game.c": "7fe514621409015755f7b09268e670cd3050b4a00e8784803ba579371a623186",
   "src/storage/codec.c": "207bd8b2b2f95626677586bdb471422d64a53715dd57d42e0c06cc38af9d1627",
-  "src/storage/transaction.c": "b70b73865c762ceda75e73fa92fa038c16a746e68f03358598d503304ce13bd1",
   "src/storage/native.c": "ef203db90ecb20f554ef0f8a3a30117bdf74bb4a9c1e51b4087419bf8663e196",
+  "src/storage/transaction.c": "b70b73865c762ceda75e73fa92fa038c16a746e68f03358598d503304ce13bd1",
+  "include/diamond.h": "c3587dfe31fb48d37b8d3e17b05bbdb873d7bdbb0ca3d9e3133633f54e33b6f7",
+  "include/ai.h": "7c02dcf201cf58532a99c5b59c23cc934b695e9f2444c534a6e0ebd7dfa0728c",
   "include/storage.h": "f4a3b24768abf4237185458b996ea7a2e7afeb2efc0df70c014e2a2b9b37949b",
-  "include/ui.h": "e0b4f8c02417a84fb6e63feb07df8a895a7dc707231914a31c197d224fd73b23"
+  "include/power.h": "be0cad36994551a305554e34c95cc489efab16114490f95d3141b44b929abd31",
+  "src/platform/power.c": "26d8f6dd1d3c0d0dba794e88f8cd1812695efdeee129ec92da0c4a917c2447ea",
+  "src/platform/power_syscalls.S": "f9e97c7c2a430f13e1ab61d9e21fbb4102d9191ae86180c7834f485b09fe4999",
+  "tests/test_ai.c": "927ea9d6e2e68d2cb20594049a173b7a6b0b81afd13e6982e836a95e246c6ab3",
+  "tests/test_engine.c": "311eba138e55a2fcf37058fe1ce09e5328ecf7f86ae0cb9795b35c200af59f8f"
 }

@@ -14,7 +14,7 @@ DOC_FILES = {'GAME_RULES.md', 'BOARD_GEOMETRY.md', 'RULE_SOURCES.md',
              'AI_DIFFICULTY_AUDIT.md', 'POWER_AUDIT.md', 'UI_CONVENTIONS.md',
              'UI_BETA_AUDIT.md', 'HARDWARE_RETEST.md', 'BETA_VALIDATION.md',
              'PUBLICATION.md', 'RELEASE_NOTES.md', 'MEMORY.md',
-             'LICENSE_AUDIT.md'}
+             'LICENSE_AUDIT.md', 'ACCEPTANCE.md', 'UI_POLISH_BETA2.md'}
 TEXT_SUFFIXES = {'.c', '.h', '.S', '.py', '.sh', '.txt', '.md', '.json', '.csv', '.yml', '.cmake'}
 
 def allowed(name):

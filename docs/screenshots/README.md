@@ -1,48 +1,46 @@
-# Actual renderer captures
+# Actual beta.2 renderer captures
 
-These 396×224 PNGs come from `tools/capture.c` calling the same `dg_render()`
-used by the native add-in. They are host renders, not hardware photographs or
-separately drawn UI mockups. The current driver produces 37 frames, including
-compatibility aliases for the original setup and thinking/animation filenames.
+Sixty-nine 396×224 frames come from `tools/capture.c` calling the same
+`dg_render()` used by the add-in. These are actual host-rendered UI pixels;
+Python converts PPM to PNG and assembles sheets/crops without drawing a second UI.
+Captions use the retained gint atlas; enlarged crops use nearest-neighbor pixels.
+[Conventions](../UI_CONVENTIONS.md), [polish audit](../UI_POLISH_BETA2.md) and
+[hardware retest](../HARDWARE_RETEST.md) explain behavior and physical limits.
 
-LEVEL display order is EASY / NORMAL / HARD, with stable saved IDs 0 / 2 / 1.
-The renderer shows full-color board pieces, solid cyan Assist destinations,
-black/white RULES, the red human annotation and visible AI terminology.
-Actual search profiles are described in [AI_DESIGN.md](../AI_DESIGN.md);
-[UI_BETA_AUDIT.md](../UI_BETA_AUDIT.md) records this visual change and pixel evidence.
-Control semantics are in [UI_CONVENTIONS.md](../UI_CONVENTIONS.md).
-Calculator-only validation remains [HARDWARE TEST REQUIRED](../HARDWARE_RETEST.md).
+| View | Actual captures |
+|---|---|
+| PLAYER no resume | [3P tile](player.png), [2P tile](player-2p.png), [profile/AI crop](player-icons.png) |
+| PLAYER valid global resume | [Saved 2P](player-resume-2p.png), [Saved 3P](player-resume-3p.png) |
+| PLAYER tile mismatch | [Saved 3P / tile 2P](player-resume-saved-3p-tile-2p.png), [Saved 2P / tile 3P](player-resume-saved-2p-tile-3p.png) |
+| Numbered setup, no resume | [2P](setup-2p-no-resume.png), [3P](setup-3p-no-resume.png) |
+| Numbered setup, matching resume | [2P](setup-2p-resume.png), [3P](setup-3p-resume.png), [four-layout sheet](setup-rows-sheet.png) |
+| Mismatched setup | [2P](setup-2p-mismatch.png), [3P](setup-3p-mismatch.png) |
+| 2P difficulty selected | [EASY](setup-2p-easy.png), [NORMAL](setup-2p-normal.png), [HARD](setup-2p-hard.png) |
+| 3P difficulty selected | [EASY](setup-3p-easy.png), [NORMAL](setup-3p-normal.png), [HARD](setup-3p-hard.png) |
+| FIRST selection | [HUMAN](setup-2p-first-human.png), [AI](setup-2p-first-ai.png) |
+| HUMAN slot selection | [1ST](setup-3p-human-1st.png), [2ND](setup-3p-human-2nd.png), [3RD](setup-3p-human-3rd.png) |
+| ASSIST last row | [2P OFF](setup-2p-assist-off.png), [2P ON](setup-2p-assist-on.png), [3P OFF](setup-3p-assist-off.png), [3P ON](setup-3p-assist-on.png) |
+| Colored HUD and goal fractions | [2P EASY / HUMAN](hud-human-2p-easy.png), [3P NORMAL / YELLOW AI](hud-yellow-3p-normal.png), [3P HARD / GREEN AI](hud-green-3p-hard.png) |
+| Thinking overview | [1 dot](thinking-1.png), [2 dots](thinking-2.png), [3 dots](thinking-3.png), [phase sheet](thinking-phases.png) |
+| Thinking zoom | [1 dot](thinking-zoom-1.png), [2 dots](thinking-zoom-2.png), [3 dots](thinking-zoom-3.png) |
+| Overview | [2P](2p-overview.png), [3P](3p-overview.png), [selected](selected-overview.png) |
+| Zoom | [unselected](zoom-unselected.png), [selected](selected-zoom.png), [multi-jump](zoom.png), [Assist OFF](zoom-assist-off.png) |
+| Piece fill fixtures | [overview](piece-readability.png), [zoom](piece-readability-zoom.png), [selection](piece-selection.png) |
+| Assist/path | [ON](assist-on.png), [OFF](assist-off.png), [multi-jump](multi-jump.png) |
+| Warnings | [invalid move](warning.png), [long overview](warning-long.png), [zoom](warning-zoom.png) |
+| Rules | [first page](rules.png), [controls page](rules-controls.png) |
+| Restart/undo/AI animation | [restart](restart.png), [undo ready](undo-ready.png), [move with undo](move-with-undo.png), [animation](ai-animation.png) |
+| Results | [human](result.png), [NORMAL](result-normal.png), [GREEN AI](result-green-ai.png), [YELLOW AI](result-yellow-ai.png), [frozen board](result-board.png) |
 
-| Screen | Actual common-renderer PNG |
-| --- | --- |
-| PLAYER / 2P tile selected | [3P selected](player.png), [2P selected](player-2p.png) |
-| 2P SETUP, each level | [EASY](setup-2p-easy.png), [NORMAL](setup-2p-normal.png), [HARD](setup-2p-hard.png) |
-| 3P SETUP, each level | [EASY](setup-3p-easy.png), [NORMAL](setup-3p-normal.png), [HARD](setup-3p-hard.png) |
-| All three faces, enlarged actual crop | [Level faces](level-faces.png) |
-| SETTINGS / RULES | [Settings](settings.png), [Rules](rules.png), [Controls page](rules-controls.png) |
-| Overview | [2P](2p-overview.png), [3P](3p-overview.png) |
-| Piece readability fixture | [Overview](piece-readability.png), [Zoom](piece-readability-zoom.png) |
-| Selected piece | [Selection](piece-selection.png) |
-| Assist destinations | [ON](assist-on.png), [OFF](assist-off.png) |
-| Multi-jump and zoom | [Multi-jump](multi-jump.png), [Zoom](zoom.png), [Zoom Assist OFF](zoom-assist-off.png) |
-| AI states | [Thinking](ai-thinking.png), [Animation](ai-animation.png) |
-| Invalid move warning | [Warning](warning.png) |
-| Restart and undo | [Restart](restart.png), [Undo available](undo-ready.png), [Move with undo](move-with-undo.png) |
-| Result | [Human](result.png), [NORMAL AI](result-normal.png), [GREEN AI](result-green-ai.png), [YELLOW AI](result-yellow-ai.png) |
-| Frozen final board / active resume | [Final board](result-board.png), [Resume](player-resume.png) |
+[Contact sheet](contact-sheet.png) and [level sheet](level-selection-sheet.png)
+contain actual frames. [UI beta.1→beta.2](ui-polish-before-after.png) uses
+[frozen beta.1 own captures](beta1-before/README.md). The earlier
+[piece comparison](piece-before-after.png), [fill counts](piece-fill-metrics.csv)
+and [full-frame comparison](beta-before-after.png) retain the
+[before-fill baseline](before-fill/README.md). Historical compatibility aliases
+setup-2p/setup-3p/cpu-thinking/cpu-animation/player-resume remain actual current renders.
+Old face crops and SETTINGS current captures have been removed.
 
-[Contact sheet](contact-sheet.png) and [level selection sheet](level-selection-sheet.png)
-place actual frames without redrawing their pixels.
-[Piece before/after](piece-before-after.png) includes all three piece colors,
-white empties and cyan markers in both view scales; its measured
-[fill pixel counts](piece-fill-metrics.csv) use unchanged interior radii.
-[Full-frame comparison](beta-before-after.png) uses only the
-[frozen own baseline](before-fill/README.md).
-
-Regenerate after a host build with `python3 tools/ui_captures.py`. The public
-checkout needs its own source, host capture executable, Pillow and retained own
-baseline PNGs; it does not need the reference projects, private screenshots or
-historical validation directories. C renders every app pixel and exports crop
-coordinates from the real geometry. Python converts PNGs and assembles nearest
-neighbor crops/contact sheets. Native dim, brightness restoration, APO,
-readability and response time still require hardware retesting.
+Regenerate after a host build with `python3 tools/ui_captures.py`. No reference
+project or private image is required. Static images supplement the controller,
+native-clock and pixel-transition tests; they cannot establish calculator timing.

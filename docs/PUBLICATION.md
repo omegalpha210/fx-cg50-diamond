@@ -1,25 +1,28 @@
-# Public beta snapshot
+# Public beta publication
 
-The authenticated publishing account is `omegalpha210`. The repository name is
-`fx-cg50-diamond`; the first prerelease tag is `v0.1.0-beta.1`.
+Repository/account: `omegalpha210/fx-cg50-diamond`. The current prerelease is
+[v0.1.0-beta.2](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2).
+Its source is a normal descendant of beta.1 commit
+`f7e111c9c2a12243275875473fbbc30ecb34d628`. The beta.1 commit, annotated tag
+and release stay unchanged. Private local development history remains local.
 
-Before publication, all five existing local commits were inspected. Two contain
-personal absolute paths and private reference screenshots. The local history is
-preserved. A separate allowlisted public snapshot excludes those commits and
-private files; it does not rewrite the local development branch.
-Future releases should update the existing public ancestry from an audited
-snapshot rather than force-push the private local history.
+The initial beta.1 snapshot excluded old commits with personal absolute paths
+and private reference screenshots. Beta.2 copies the audited allowlist into a
+checkout of the existing public branch and commits on that ancestry; no force
+push, tag movement or separate unrelated root is used.
 
-`tools/public_snapshot.py --check` scans the public allowlist for private paths,
-credentials, symlinks, user saves and prohibited files. `--output` copies a fresh
-source tree; `--check-git` checks every tracked public file. The public tree
-contains original source/tests/tools, retained licenses, EN/KO README, original
-icons, actual DIAMOND renderer captures and curated audit reports. It excludes
-legacy raw build logs, temporary AI logs, private reference images, reference
-maps, toolchains, caches and personal save files.
+`tools/public_snapshot.py --check` scans allowed source/docs for paths,
+credentials, symlinks, user saves and broken local links. `--output` makes a
+fresh file snapshot; `--check-git` audits every tracked public file. Original
+code/tests/tools/assets, EN/KO README, own captures and retained licenses are
+included. Toolchains, caches, raw logs/maps/ELFs, private reference screenshots
+and personal saves are excluded. New ACCEPTANCE/UI_POLISH_BETA2 reports are
+explicitly allowlisted after public-content review.
 
-The public candidate is rebuilt with strict host tests, UBSan, AI/save/power
-checks and a clean SH build. Renderer captures are regenerated from the same
-candidate. The G3A and checksum file uploaded to the prerelease come from that
-source. Release assets are downloaded again and compared byte for byte and by
-SHA256. Final release identity and verification are recorded after upload.
+The clean exact source candidate runs strict host, UBSan, AI fixed-choice and
+selfplay regression, save/power/native tests and strict SH compilation. Captures
+are regenerated and compared to the local output. G3A and SHA256SUMS come from
+that tree. Both uploaded assets are downloaded again and compared byte-for-byte,
+with checksum-file verification and GitHub SHA256 digests. Release notes record
+verification after upload. Source identity is reproducible with
+`git rev-parse v0.1.0-beta.2^{commit}`; the final delivery gives the exact commit.

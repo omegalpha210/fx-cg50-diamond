@@ -7,16 +7,16 @@
 판단하는 GREEN·YELLOW AI와 대결합니다. 동일한 능력의 말 10개를 반대편
 진영으로 먼저 옮기면 승리합니다.
 
-[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.1) · [규칙](docs/GAME_RULES.md)
+[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2) · [규칙](docs/GAME_RULES.md)
 
 ![공통 렌더러의 실제 3P 화면](docs/screenshots/3p-overview.png)
 
 **실험적 beta — HARDWARE TEST REQUIRED.** 호스트 테스트와 패키지 검사로
 검증한 버전입니다. 실제 fx-CG50 화면·저장·전원 동작·AI 응답 시간은
-[28개 실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
+[32개 실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
 
 - **2P / 3P:** 선공 또는 인간의 차례 위치를 선택합니다.
-- **EASY / NORMAL / HARD:** 초록 웃는 얼굴, 노랑 무표정, 빨강 화난 얼굴.
+- **EASY / NORMAL / HARD:** 번호 행의 초록·읽기 쉬운 금색·빨강 텍스트로 선택합니다.
   EASY는 휴리스틱과 시드 기반 무작위 선택, NORMAL은 제한된 얕은 탐색,
   HARD는 더 큰 범위의 제한 탐색을 사용합니다. 2P는 alpha-beta, 3P는 각 플레이어의
   점수를 따로 최대화하는 MaxN입니다. [AI 검증](docs/AI_DIFFICULTY_AUDIT.md).
@@ -29,11 +29,11 @@
   MENU/OFF/APO 전에 확정 상태를 저장합니다. [전원 감사](docs/POWER_AUDIT.md).
 
 ![PLAYER](docs/screenshots/player.png)
-![세 난이도 얼굴](docs/screenshots/level-faces.png)
+![RESUME이 있는 번호 행 GAME SETUP](docs/screenshots/setup-3p-resume.png)
 
 ## 설치와 시작
 
-[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases)에서
+[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2)에서
 `DIAMOND.g3a`와 `SHA256SUMS.txt`를 받습니다. 아래 명령으로 체크섬을 확인하고,
 USB로 계산기 저장 메모리 최상위에 G3A를 복사한 뒤 안전하게 연결을 해제합니다.
 CASIO Main Menu에서 DIAMOND를 실행합니다.
@@ -42,11 +42,22 @@ CASIO Main Menu에서 DIAMOND를 실행합니다.
 shasum -a 256 -c SHA256SUMS.txt
 ```
 
-PLAYER는 3P가 기본입니다. EXE/F6으로 GAME SETUP에 들어가고 LEFT/RIGHT로
-EASY → NORMAL → HARD를 선택합니다. 양 끝에서 선택은 멈춥니다.
-DOWN으로 2P FIRST의 HUMAN/AI 또는 3P HUMAN의 1ST/2ND/3RD를 고릅니다.
-EXE/F6으로 시작합니다. F1 SET에서 전역 ASSIST를 바꾸고, 진행 중인 저장이
-있으면 F2 RESUME으로 설정 화면을 거치지 않고 이어갑니다.
+PLAYER는 3P가 기본입니다. EXE/F6 NEXT로 GAME SETUP을 엽니다.
+진행 중인 유효한 저장이 있으면 **F1 RESUME**이 활성화됩니다. 다른 2P/3P 타일을
+선택했어도 저장된 게임을 그대로 이어갑니다. F2는 비어 있습니다.
+RED 아이콘에는 흰 머리·어깨 실루엣, AI 아이콘에는 가운데 AI 글자가 표시됩니다.
+
+GAME SETUP은 같은 인원 수의 저장이 있을 때만 RESUME 행을 추가합니다.
+NEW GAME → DIFFICULTY → FIRST(2P)/HUMAN(3P) → ASSIST 순서이며 ASSIST는
+항상 마지막입니다. UP/DOWN으로 행을 고르고 LEFT/RIGHT로 난이도, 선공/인간 순서,
+Assist OFF/ON을 바꿉니다. 양 끝에서 멈춥니다. EXE/F6 OPEN은 RESUME 행에서만
+이어가고, 나머지 모든 행에서는 현재 설정으로 새 게임을 시작합니다.
+RESUME은 저장 난이도·시드/RNG·차례·AI 순서·Undo를 유지하며 ASSIST는 전역 설정입니다.
+F4 RULES는 그대로 사용할 수 있습니다.
+
+TURN의 플레이어와 목표 진행 숫자까지 RED·금색·GREEN으로 표시합니다.
+가운데 인원/난이도 문자열 전체는 초록·금색·빨강입니다. 계산 중 THINKING의 점은
+312.5ms마다 바뀌며 글자 시작점, RNG, idle 활동 시간을 바꾸지 않습니다.
 
 ## 조작
 
@@ -54,7 +65,7 @@ EXE/F6으로 시작합니다. F1 SET에서 전역 ASSIST를 바꾸고, 진행 �
 |---|---|
 | 방향키 | 보드 커서 이동, 메뉴 선택 |
 | EXE / F6 | 내 RED 말을 선택하고 합법적인 도착 칸으로 이동 |
-| EXIT | 선택 취소, 선택이 없으면 저장 후 설정으로 돌아가기 |
+| EXIT | 선택 해제 → 확대 해제 → 저장 후 GAME SETUP |
 | F1 | 재시작 확인 |
 | F2 | 인간 결정 한 번과 이후 AI 응답 되돌리기 |
 | F4 | 스크롤 가능한 규칙 |
@@ -92,6 +103,8 @@ ctest --test-dir build/ubsan --output-on-failure
 [검증](docs/BETA_VALIDATION.md), [메모리](docs/MEMORY.md),
 [실제 렌더러 캡처](docs/screenshots/README.md),
 [공개 이력](docs/PUBLICATION.md)에 근거와 한계를 기록했습니다.
+[UI polish 감사](docs/UI_POLISH_BETA2.md)는 번호 행·점 애니메이션·RESUME/EXIT 전환과
+보드 겹침 검사를 기록합니다.
 호스트 ms를 계산기 응답 시간으로 해석하지 않습니다.
 
 ## 출처와 라이선스

@@ -24,6 +24,19 @@ static void enter_game(DgApp *app)
  app->cursor=36;for(int n=0;n<DG_NODES;n++)if(app->archive.game.pos.board[n]==DG_RED){app->cursor=(uint8_t)n;break;}
  setup_from_game(app);
 }
+bool dg_app_to_setup(DgApp *app)
+{
+ app->thinking=app->animation=0;app->selected=DG_NONE;app->path.length=0;
+ if(!dg_checkpoint(app))return false;
+ setup_from_game(app);app->screen=DG_SETUP;app->focus=0;return true;
+}
+bool dg_app_thinking_tick(DgApp *app,uint32_t elapsed_ticks)
+{
+ if(!app->thinking)return false;
+ uint8_t phase=(uint8_t)((elapsed_ticks/DG_THINKING_TICKS)%3u);
+ if(phase==app->thinking_phase)return false;
+ app->thinking_phase=phase;return true;
+}
 static bool new_game(DgApp *app)
 {
  if(!dg_checkpoint(app))return false;
@@ -71,27 +84,34 @@ bool dg_app_key(DgApp *app,int key)
   else if(key==DGK_DOWN)app->rules_scroll=adjust(app->rules_scroll,1,12);
   return true;
  }
- if(app->screen==DG_SETTINGS){
-  if(key==DGK_LEFT || key==DGK_RIGHT){uint8_t value=key==DGK_RIGHT?1:0;if(value!=app->archive.assist){app->archive.assist=value;app->dirty=1;}}
-  else if(key==DGK_EXIT){if(dg_checkpoint(app))app->screen=app->parent;}
-  return true;
- }
  if(app->screen==DG_PLAYER || app->screen==DG_SETUP){
-  if(key==DGK_F1){parent_screen(app,DG_SETTINGS);return true;}
   if(key==DGK_F4){parent_screen(app,DG_RULES);return true;}
  }
  if(app->screen==DG_PLAYER){
   if(key==DGK_UP || key==DGK_LEFT)app->players=2;
   else if(key==DGK_DOWN || key==DGK_RIGHT)app->players=3;
-  else if(key==DGK_F2 && app->archive.active){enter_game(app);}
+  else if(key==DGK_F1 && dg_app_resumable(app)){enter_game(app);}
   else if(key==DGK_EXE || key==DGK_F6){app->screen=DG_SETUP;app->focus=0;if(app->slot>=app->players)app->slot=(uint8_t)(app->players-1);}
   return true;
  }
  if(app->screen==DG_SETUP){
-  if(key==DGK_UP)app->focus=0;else if(key==DGK_DOWN)app->focus=1;
-  else if(key==DGK_LEFT || key==DGK_RIGHT){int direction=key==DGK_LEFT?-1:1;if(!app->focus)app->level=adjust_level(app->level,direction);else app->slot=adjust(app->slot,direction,(uint8_t)(app->players-1));}
-  else if(key==DGK_EXE || key==DGK_F6)(void)new_game(app);
-  else if(key==DGK_EXIT)app->screen=DG_PLAYER;
+  unsigned count=dg_entry_count(app);if(app->focus>=count)app->focus=0;
+  int action=dg_entry_action(app,app->focus);
+  if(key==DGK_UP)app->focus=(uint8_t)((app->focus+count-1)%count);
+  else if(key==DGK_DOWN)app->focus=(uint8_t)((app->focus+1u)%count);
+  else if(key==DGK_LEFT || key==DGK_RIGHT){
+   int direction=key==DGK_LEFT?-1:1;
+   if(action==DG_ENTRY_LEVEL)app->level=adjust_level(app->level,direction);
+   else if(action==DG_ENTRY_SLOT)app->slot=adjust(app->slot,direction,(uint8_t)(app->players-1));
+   else if(action==DG_ENTRY_ASSIST){
+    uint8_t value=key==DGK_RIGHT?1:0;
+    if(value!=app->archive.assist){app->archive.assist=value;app->dirty=1;}
+   }
+  }
+  else if(key==DGK_EXE || key==DGK_F6){
+   if(action==DG_ENTRY_RESUME)enter_game(app);else (void)new_game(app);
+  }
+  else if(key==DGK_EXIT){if(dg_checkpoint(app))app->screen=DG_PLAYER;}
   return true;
  }
  DgGame *game=&app->archive.game;
@@ -106,9 +126,11 @@ bool dg_app_key(DgApp *app,int key)
  if(key==DGK_F4){parent_screen(app,DG_RULES);return true;}
  if(key==DGK_F5){app->zoom^=1;return true;}
  if(key==DGK_EXIT){
-  app->thinking=app->animation=0;app->path.length=0;
+  if(app->thinking || app->animation){(void)dg_app_to_setup(app);return true;}
+  app->path.length=0;
   if(app->selected!=DG_NONE){app->selected=DG_NONE;return true;}
-  if(dg_checkpoint(app)){setup_from_game(app);app->screen=DG_SETUP;app->focus=0;}return true;
+  if(app->zoom){app->zoom=0;return true;}
+  (void)dg_app_to_setup(app);return true;
  }
  if(game->pos.winner){if(key==DGK_F6)(void)new_game(app);return true;}
  if(app->thinking || app->animation)return false;
@@ -132,7 +154,7 @@ bool dg_app_key(DgApp *app,int key)
 bool dg_app_cpu(DgApp *app,DgCancel cancel,void *context)
 {
  if(app->screen!=DG_GAME || app->modal || app->archive.game.pos.winner || dg_current(&app->archive.game)==DG_RED || app->animation)return false;
- app->thinking=1;
+ app->thinking=1;app->thinking_phase=0;
  bool result=dg_ai_choose(&app->archive.game,0,cancel,context,&app->pending_move,&app->pending_rng,&app->ai_stats);
  app->thinking=0;
  if(!result){if(!app->ai_stats.cancelled)warning(app,"CPU HAS NO MOVE");return false;}

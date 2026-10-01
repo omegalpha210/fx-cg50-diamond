@@ -1,34 +1,22 @@
 #include "draw.h"
 #include <stdio.h>
 
-static void option(DgPainter *p,int x,int y,int w,const char *s,bool selected)
+/* NUM GAME entry(): normal font, measured option widths, outline/underline. */
+static void entry_options(DgPainter *p,int y,const char *const *names,
+ unsigned count,unsigned selected,const uint16_t *colors)
 {
- ui_rect(p,x,y,w,UI_OPTION_H,selected?UI_SELECTED:UI_WHITE);
- ui_border(p,x,y,w,UI_OPTION_H,selected?UI_FOCUS:UI_LINE,selected?2:1);
- int textw=ui_text_width(s,3,2),left=x+(w-textw)/2;
- ui_text(p,left,y+15,s,UI_INK,3,2);
-}
-static void level_option(DgPainter *p,int x,uint8_t level,bool selected)
-{
- const char *label=ui_level_label(level);int y=51,w=122;
- ui_rect(p,x,y,w,UI_OPTION_H,selected?UI_SELECTED:UI_WHITE);
- ui_border(p,x,y,w,UI_OPTION_H,selected?UI_FOCUS:UI_LINE,selected?2:1);
- int left=x+(w-ui_text_width(label,3,2)-30)/2,cx=left+9,cy=y+UI_OPTION_H/2;
- uint16_t color=level==DG_EASY?PIECE_GREEN:level==DG_NORMAL?PIECE_YELLOW:PIECE_RED;
- ui_disc(p,cx,cy,9,UI_BLACK);ui_disc(p,cx,cy,8,color);
- ui_rect(p,cx-4,cy-3,2,2,UI_BLACK);ui_rect(p,cx+3,cy-3,2,2,UI_BLACK);
- if(level==DG_NORMAL)ui_line(p,cx-4,cy+3,cx+4,cy+3,UI_BLACK);
- else{
-  int edge=level==DG_EASY?2:4,middle=level==DG_EASY?4:2;
-  ui_line(p,cx-4,cy+edge,cx-2,cy+middle,UI_BLACK);
-  ui_line(p,cx-2,cy+middle,cx+2,cy+middle,UI_BLACK);
-  ui_line(p,cx+2,cy+middle,cx+4,cy+edge,UI_BLACK);
+ int total=0;
+ for(unsigned i=0;i<count;i++)total+=ui_text_width(names[i],1,1)+10;
+ int gap=count>1?(228-total)/(int)(count-1):0,x=146;
+ for(unsigned i=0;i<count;i++){
+  int w=ui_text_width(names[i],1,1)+10;
+  uint16_t ink=colors?colors[i]:UI_BLUE;
+  if(i==selected){
+   ui_rect(p,x,y+4,w,21,UI_WHITE);ui_border(p,x,y+4,w,21,ink,1);
+   ui_rect(p,x+3,y+23,w-6,2,ink);
+  }
+  ui_text(p,x+5,y+9,names[i],ink,1,1);x+=w+gap;
  }
- if(level==DG_HARD){
-  ui_line(p,cx-5,cy-6,cx-1,cy-4,UI_BLACK);
-  ui_line(p,cx+1,cy-4,cx+5,cy-6,UI_BLACK);
- }
- ui_text(p,left+30,y+15,label,UI_INK,3,2);
 }
 static void player(DgPainter *p,const DgApp *app,const char **labels)
 {
@@ -42,27 +30,46 @@ static void player(DgPainter *p,const DgApp *app,const char **labels)
   else{ui_piece(p,x+45,105,15,DG_RED,true);ui_piece(p,x+93,105,15,DG_YELLOW,false);ui_piece(p,x+141,105,15,DG_GREEN,false);}
   ui_center(p,x,148,UI_CARD_W,i?"3 PLAYER":"2 PLAYER",UI_INK,3,2);
  }
- labels[0]="SET";labels[1]=app->archive.active?"RESUME":"";labels[3]="RULES";labels[5]="NEXT";
+ labels[0]=dg_app_resumable(app)?"RESUME":"";labels[3]="RULES";labels[5]="NEXT";
 }
 static void setup(DgPainter *p,const DgApp *app,const char **labels)
 {
  ui_title(p,"GAME SETUP",app->players==2?"2 PLAYER":"3 PLAYER");
- ui_text(p,9,34,"LEVEL",app->focus==0?UI_BLUE:UI_MUTED,1,1);
- static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
- for(int i=0;i<3;i++)level_option(p,7+i*130,levels[i],app->level==levels[i]);
- ui_text(p,9,114,app->players==2?"FIRST":"HUMAN",app->focus==1?UI_BLUE:UI_MUTED,1,1);
- if(app->players==2){option(p,7,131,187,"HUMAN",app->slot==0);option(p,202,131,187,"AI",app->slot==1);}
- else{
-  static const char *const slots[3]={"1ST","2ND","3RD"};
-  for(int i=0;i<3;i++)option(p,7+i*130,131,122,slots[i],app->slot==(uint8_t)i);
+ unsigned count=dg_entry_count(app);
+ for(unsigned row=0;row<count;row++){
+  int action=dg_entry_action(app,row);char number[4];
+  snprintf(number,sizeof number,"%u",row+1);
+  const char *name=action==DG_ENTRY_RESUME?"RESUME":action==DG_ENTRY_NEW?"NEW GAME":
+   action==DG_ENTRY_LEVEL?"DIFFICULTY":action==DG_ENTRY_SLOT?(app->players==2?"FIRST":"HUMAN"):"ASSIST";
+  bool compact=count>4;int y=(compact?30:34)+(int)row*(compact?27:34),h=compact?25:29;
+  ui_rect(p,10,y,376,h,row==app->focus?UI_SELECTED:UI_WHITE);
+  ui_border(p,10,y,376,h,row==app->focus?UI_BLUE:UI_LINE,row==app->focus?2:1);
+  ui_text(p,20,y+9,number,UI_MUTED,1,1);ui_text(p,43,y+9,name,UI_INK,1,1);
+  if(action==DG_ENTRY_LEVEL){
+   static const char *const names[3]={"EASY","NORMAL","HARD"};
+   static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
+   static const uint16_t colors[3]={PIECE_GREEN,UI_GOLD,PIECE_RED};unsigned selected=0;
+   for(unsigned i=0;i<3;i++)if(app->level==levels[i])selected=i;
+   entry_options(p,y,names,3,selected,colors);
+  }else if(action==DG_ENTRY_SLOT){
+   static const char *const first[2]={"HUMAN","AI"},*const slots[3]={"1ST","2ND","3RD"};
+   entry_options(p,y,app->players==2?first:slots,app->players,app->slot,NULL);
+  }else if(action==DG_ENTRY_ASSIST){
+   static const char *const assist[2]={"OFF","ON"};
+   entry_options(p,y,assist,2,app->archive.assist,NULL);
+  }
  }
- labels[0]="SET";labels[3]="RULES";labels[5]="PLAY";
-}
-static void settings(DgPainter *p,const DgApp *app)
-{
- ui_title(p,"SETTINGS",NULL);ui_text(p,9,42,"ASSIST",UI_BLUE,1,1);
- option(p,7,61,187,"OFF",!app->archive.assist);option(p,202,61,187,"ON",app->archive.assist!=0);
- ui_text(p,9,124,"Show legal destinations.",UI_MUTED,1,1);
+ int action=dg_entry_action(app,app->focus);
+ const char *hint=action==DG_ENTRY_RESUME?"Continue the saved game.":action==DG_ENTRY_NEW?"New game with these settings.":
+  action==DG_ENTRY_LEVEL?"LEFT/RIGHT: difficulty for NEW GAME.":action==DG_ENTRY_SLOT?
+  (app->players==2?"LEFT/RIGHT: HUMAN or AI starts.":"LEFT/RIGHT: your turn slot."):"LEFT/RIGHT: legal destination hints.";
+ if(dg_setup_resume(app) && !app->notice[0]){
+  char saved[48];snprintf(saved,sizeof saved,"Saved: %s / %s",ui_level_label(app->archive.game.level),
+   app->players==2?(app->archive.game.human_slot?"AI FIRST":"HUMAN FIRST"):
+   app->archive.game.human_slot==0?"HUMAN 1ST":app->archive.game.human_slot==1?"HUMAN 2ND":"HUMAN 3RD");
+  ui_text(p,12,173,saved,UI_MUTED,1,1);
+ }
+ ui_text(p,12,188,hint,UI_MUTED,1,1);labels[3]="RULES";labels[5]="OPEN";
 }
 static void rules(DgPainter *p,const DgApp *app)
 {
@@ -89,6 +96,5 @@ void ui_menu_screen(DgPainter *p,const DgApp *app,const char **labels)
 {
  if(app->screen==DG_PLAYER)player(p,app,labels);
  else if(app->screen==DG_SETUP)setup(p,app,labels);
- else if(app->screen==DG_SETTINGS)settings(p,app);
  else rules(p,app);
 }

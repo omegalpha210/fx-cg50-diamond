@@ -53,7 +53,9 @@ last frame; cancellation discards the pending move and pending RNG.
 The app uses one native framebuffer. Only actual DOWN/HOLD input resets idle;
 draws, timer wakeups, warnings and search callbacks do not. A single scheduler
 timer wakes foreground idle/animation work, with RTC fallback. AI never runs
-in the timer callback. The OS supplies dim/APO durations, read through the
+in the timer callback. THINKING uses the existing foreground cancellation hook
+with 40 RTC ticks per visual phase; its measured box alone is cleared/redrawn.
+No visual progress consumes RNG, writes storage or counts as physical input. The OS supplies dim/APO durations, read through the
 small scalar syscalls retained with attribution. MENU/OFF use gint lifecycle
 APIs in this order: checkpoint committed state → close storage handles →
 pause scheduling and restore brightness → enter the OS. Save/close failures

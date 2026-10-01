@@ -61,32 +61,38 @@ static void board(DgPainter *p,const DgApp *app)
 }
 static const char *player_name(uint8_t player)
 {return player==DG_RED?"YOU":player==DG_YELLOW?"YELLOW":"GREEN";}
+UiBox ui_thinking_box(void)
+{return (UiBox){6,57,ui_text_width("THINKING...",1,1)+4,UI_FONT_HEIGHT+4};}
+void ui_thinking(DgPainter *p,const DgApp *app)
+{
+ if(!app->thinking)return;
+ static const char *const phases[3]={"THINKING.","THINKING..","THINKING..."};
+ UiBox b=ui_thinking_box();ui_rect(p,b.x,b.y,b.w,b.h,UI_PAPER);
+ ui_text(p,b.x+2,b.y+2,phases[app->thinking_phase%3],UI_BLUE,1,1);
+}
 static void status(DgPainter *p,const DgApp *app)
 {
  const DgGame *g=&app->archive.game;uint8_t current=dg_current(g);char value[40];
  ui_rect(p,0,0,396,24,UI_WHITE);ui_rect(p,0,23,396,1,UI_LINE);
- ui_text(p,8,6,"TURN",UI_MUTED,1,1);
- ui_text(p,50,6,current==DG_RED?"HUMAN":current==DG_GREEN?"GREEN AI":"YELLOW AI",UI_INK,1,1);
+ ui_text(p,8,6,"TURN :",UI_INK,1,1);
+ ui_text(p,8+ui_text_width("TURN : ",1,1)+1,6,current==DG_RED?"HUMAN":current==DG_GREEN?"GREEN AI":"YELLOW AI",ui_actor_color(current),1,1);
  snprintf(value,sizeof value,"%uP / %s",(unsigned)g->players,ui_level_label(g->level));
- ui_center(p,0,6,396,value,UI_MUTED,1,1);
+ ui_center(p,0,6,396,value,ui_level_color(g->level),1,1);
  snprintf(value,sizeof value,"T %lu",(unsigned long)g->pos.turns);
  ui_text(p,388-ui_text_width(value,1,1),6,value,UI_MUTED,1,1);
  /* Small backing regions preserve readable HUD text in the zoom viewport. */
- ui_rect(p,6,30,99,17,UI_PAPER);
- ui_text(p,8,33,app->archive.assist?"ASSIST ON":"ASSIST OFF",UI_MUTED,1,1);
+ const char *assist=app->archive.assist?"ASSIST ON":"ASSIST OFF";
+ ui_rect(p,6,30,ui_text_width(assist,1,1)+4,UI_FONT_HEIGHT+4,UI_PAPER);
+ ui_text(p,8,32,assist,UI_MUTED,1,1);
  int row=0;
  for(uint8_t who=DG_RED;who<=DG_GREEN;who++)if(who!=DG_YELLOW || g->players==3){
-  int y=33+row++*17;
+  int y=32+row++*15;
   snprintf(value,sizeof value,"%s %u/10",player_name(who),(unsigned)dg_goal_count(g->pos.board,who));
-  ui_rect(p,284,y-3,106,17,UI_PAPER);ui_disc(p,287,y+5,2,ui_piece_color(who));
-  ui_text(p,388-ui_text_width(value,1,1),y,value,UI_MUTED,1,1);
+  int width=ui_text_width(value,1,1);
+  ui_rect(p,386-width,y-2,width+4,UI_FONT_HEIGHT+4,UI_PAPER);
+  ui_text(p,388-width,y,value,ui_actor_color(who),1,1);
  }
- if(app->thinking){
-  ui_rect(p,6,57,117,18,UI_PAPER);
-  /* Static busy marker: the frozen native loop does not redraw during search. */
-  ui_ring(p,12,65,4,UI_LINE);ui_line(p,12,61,16,65,UI_BLUE);
-  ui_text(p,22,60,"THINKING...",UI_BLUE,1,1);
- }
+ ui_thinking(p,app);
 }
 static void modal(DgPainter *p,const DgApp *app)
 {

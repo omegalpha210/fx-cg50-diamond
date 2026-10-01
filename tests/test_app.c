@@ -108,7 +108,7 @@ static void test_lifecycle_checkpoints(void)
  state.fail=true;CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_GAME && app.dirty);
  state.fail=false;CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_SETUP && !app.dirty);
  CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_PLAYER);
- CHECK(dg_app_key(&app,DGK_F2));CHECK(app.screen==DG_GAME);
+ CHECK(dg_app_key(&app,DGK_F1));CHECK(app.screen==DG_GAME);
  CHECK(same_archive(&app.archive,&state.disk));
 }
 typedef struct { DgApp *app;unsigned calls,stop;int key; } Cancel;
@@ -224,10 +224,115 @@ static void test_completion(void)
  CHECK(!state.disk.active && !app.dirty);
  CHECK(dg_storage_cleanup());
 }
+static void test_entry_contract(void)
+{
+ static const int no_resume[4]={DG_ENTRY_NEW,DG_ENTRY_LEVEL,DG_ENTRY_SLOT,DG_ENTRY_ASSIST};
+ static const int resume_rows[5]={DG_ENTRY_RESUME,DG_ENTRY_NEW,DG_ENTRY_LEVEL,DG_ENTRY_SLOT,DG_ENTRY_ASSIST};
+ for(uint8_t players=2;players<=3;players++)for(unsigned saved=0;saved<3;saved++){
+  DgApp app;State state;begin(&app,&state,saved==2?(players==2?3:2):players,0,DG_NORMAL);
+  app.archive.active=saved!=0;app.screen=DG_PLAYER;app.players=players;
+  DgGame original=app.archive.game;uint32_t new_rng=app.new_rng;unsigned saves=state.saves;
+  CHECK(dg_app_key(&app,DGK_F2));CHECK(app.screen==DG_PLAYER);
+  CHECK(dg_app_key(&app,DGK_F3));CHECK(app.screen==DG_PLAYER);
+  CHECK(dg_app_key(&app,DGK_F6));CHECK(app.screen==DG_SETUP && app.focus==0);
+  unsigned count=saved==1?5u:4u;CHECK(dg_entry_count(&app)==count);
+  CHECK(dg_entry_action(&app,count)==-1);
+  for(unsigned row=0;row<count;row++)CHECK(dg_entry_action(&app,row)==(saved==1?resume_rows[row]:no_resume[row]));
+  CHECK(dg_entry_action(&app,count-1)==DG_ENTRY_ASSIST);
+  CHECK(dg_app_key(&app,DGK_UP) && app.focus==count-1);
+  CHECK(dg_app_key(&app,DGK_DOWN) && app.focus==0);
+  for(unsigned row=0;row<(saved==1?2u:1u);row++){
+   app.focus=(uint8_t)row;CHECK(dg_app_key(&app,DGK_LEFT));CHECK(dg_app_key(&app,DGK_RIGHT));
+   CHECK(app.level==DG_NORMAL && app.slot==0 && app.archive.assist==1 && app.new_rng==new_rng);
+  }
+  app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_LEVEL);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_LEFT));CHECK(app.level==DG_EASY);
+  CHECK(dg_app_key(&app,DGK_RIGHT) && app.level==DG_NORMAL);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_RIGHT));CHECK(app.level==DG_HARD);
+  CHECK(dg_app_key(&app,DGK_LEFT) && app.level==DG_NORMAL);
+  app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_SLOT);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_RIGHT));CHECK(app.slot==players-1);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_LEFT));CHECK(app.slot==0);
+  app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_ASSIST);
+  CHECK(dg_app_key(&app,DGK_RIGHT) && app.archive.assist==1 && !app.dirty);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_LEFT));CHECK(!app.archive.assist && app.dirty);
+  for(unsigned i=0;i<4;i++)CHECK(dg_app_key(&app,DGK_RIGHT));CHECK(app.archive.assist && app.dirty);
+  CHECK(!memcmp(&original,&app.archive.game,sizeof original) && app.new_rng==new_rng && state.saves==saves);
+  /* Global Assist is checkpointed on leaving setup, including a mismatched run. */
+  CHECK(dg_app_key(&app,DGK_LEFT));CHECK(dg_app_key(&app,DGK_EXIT));
+  CHECK(app.screen==DG_PLAYER && !app.dirty && !state.disk.assist);
+  if(saved){
+   app.players=players==2?3:2;app.level=DG_HARD;app.slot=1;new_rng=app.new_rng;saves=state.saves;
+   CHECK(dg_app_key(&app,DGK_F1) && app.screen==DG_GAME);
+   CHECK(!memcmp(&original,&app.archive.game,sizeof original));
+   CHECK(app.new_rng==new_rng && state.saves==saves && !app.archive.assist);
+  }else{CHECK(dg_app_key(&app,DGK_F1) && app.screen==DG_PLAYER);}
+ }
+ /* EXE and OPEN start NEW from every non-RESUME row, without cycling a value. */
+ static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
+ for(uint8_t players=2;players<=3;players++)for(uint8_t slot=0;slot<players;slot++)
+  for(unsigned level=0;level<3;level++)for(uint8_t assist=0;assist<2;assist++)for(unsigned action=0;action<4;action++)for(unsigned open=0;open<2;open++){
+   DgApp app;State state;begin(&app,&state,players,0,DG_EASY);
+   CHECK(dg_app_to_setup(&app));app.level=levels[level];app.slot=slot;app.archive.assist=assist;
+   app.focus=(uint8_t)dg_entry_row(&app,no_resume[action]);
+   uint32_t expected_rng=app.new_rng;DgGame expected;
+   CHECK(dg_new(&expected,players,levels[level],slot,dg_random(&expected_rng)));
+   CHECK(dg_app_key(&app,open?DGK_F6:DGK_EXE) && app.screen==DG_GAME);
+   CHECK(!memcmp(&expected,&app.archive.game,sizeof expected));CHECK(app.new_rng==expected_rng);
+   CHECK(app.level==levels[level] && app.slot==slot && app.archive.assist==assist);
+   CHECK(app.archive.game.order[slot]==DG_RED && same_archive(&app.archive,&state.disk));
+  }
+ /* RESUME restores saved game bytes; current selectors cannot overwrite them. */
+ for(uint8_t players=2;players<=3;players++)for(unsigned open=0;open<2;open++){
+  DgApp app;State state;begin(&app,&state,players,1,DG_NORMAL);cpu_response(&app);
+  DgGame saved=app.archive.game;CHECK(dg_app_to_setup(&app));
+  app.level=DG_HARD;app.slot=0;app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_ASSIST);
+  CHECK(dg_app_key(&app,DGK_LEFT));CHECK(app.dirty && !app.archive.assist);
+  app.focus=0;uint32_t rng=app.new_rng;unsigned saves=state.saves;
+  CHECK(dg_app_key(&app,open?DGK_F6:DGK_EXE) && app.screen==DG_GAME);
+  CHECK(!memcmp(&saved,&app.archive.game,sizeof saved) && app.new_rng==rng && state.saves==saves);
+  CHECK(app.dirty && !app.archive.assist);CHECK(dg_checkpoint(&app));
+  DgApp cold;dg_app_init(&cold,(DgHooks){0},927u);cold.archive=state.disk;cold.players=players==2?3:2;
+  CHECK(dg_app_key(&cold,DGK_F1) && cold.screen==DG_GAME && !cold.archive.assist);
+  CHECK(!memcmp(&saved,&cold.archive.game,sizeof saved));
+ }
+ /* Invalid or finished archives never enable either RESUME entry. */
+ DgApp invalid;dg_app_init(&invalid,(DgHooks){0},1);invalid.archive.active=1;
+ CHECK(!dg_app_resumable(&invalid) && !dg_setup_resume(&invalid));
+ CHECK(dg_app_key(&invalid,DGK_F1) && invalid.screen==DG_PLAYER);
+}
+static void test_exit_hierarchy(void)
+{
+ for(uint8_t zoom=0;zoom<2;zoom++)for(unsigned selected=0;selected<2;selected++){
+  DgApp app;State state;begin(&app,&state,2,0,DG_NORMAL);
+  app.zoom=zoom;app.selected=selected?app.cursor:DG_NONE;
+  DgGame before=app.archive.game;unsigned saves=state.saves;
+  if(selected){CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_GAME && app.selected==DG_NONE && app.zoom==zoom && state.saves==saves);}
+  if(zoom){CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_GAME && !app.zoom && state.saves==saves);}
+  CHECK(dg_app_key(&app,DGK_EXIT));CHECK(app.screen==DG_SETUP && app.archive.active && app.focus==0);
+  CHECK(dg_entry_action(&app,0)==DG_ENTRY_RESUME);
+  CHECK(!memcmp(&before,&app.archive.game,sizeof before));
+  CHECK(dg_app_key(&app,DGK_EXE) && app.screen==DG_GAME);
+  CHECK(!memcmp(&before,&app.archive.game,sizeof before));
+ }
+ DgApp app;State state;begin(&app,&state,3,0,DG_NORMAL);
+ app.zoom=1;app.selected=app.cursor;DgGame before=app.archive.game;
+ CHECK(dg_app_key(&app,DGK_F1));CHECK(dg_app_key(&app,DGK_EXIT));
+ CHECK(app.modal==DG_MODAL_NONE && app.zoom==1 && app.selected==app.cursor && app.screen==DG_GAME);
+ CHECK(dg_app_key(&app,DGK_F4));CHECK(dg_app_key(&app,DGK_EXIT));
+ CHECK(app.screen==DG_GAME && app.zoom==1 && app.selected==app.cursor);
+ CHECK(!memcmp(&before,&app.archive.game,sizeof before));
+ app.modal=DG_MODAL_RESULT;CHECK(dg_app_key(&app,DGK_EXIT));
+ CHECK(app.screen==DG_GAME && app.zoom==1 && app.selected==app.cursor && !app.modal);
+ /* Preview/busy EXIT bypasses normal selection and zoom hierarchy. */
+ app.animation=1;app.path.length=2;CHECK(dg_app_key(&app,DGK_EXIT));
+ CHECK(app.screen==DG_SETUP && !app.animation && !app.thinking && !app.path.length && app.selected==DG_NONE);
+ CHECK(!memcmp(&before,&app.archive.game,sizeof before));
+}
 int main(void)
 {
  test_replacement_failure();test_lifecycle_checkpoints();test_cpu_cancellation();
- test_undo_restart();test_completion();
+ test_undo_restart();test_completion();test_entry_contract();test_exit_hierarchy();
  printf("app: %u checks passed; save faults, cancellation, undo, restart, completion\n",checks);
  return 0;
 }

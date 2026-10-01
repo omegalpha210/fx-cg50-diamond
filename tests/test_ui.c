@@ -19,7 +19,7 @@ static void redraw(DgApp *app,Fixture *f)
 static void start(DgApp *app,uint8_t players)
 {
  app->screen=DG_PLAYER;app->players=players;app->slot=0;app->level=DG_EASY;
- assert(dg_app_key(app,DGK_F6));assert(app->screen==DG_SETUP);assert(dg_app_key(app,DGK_F6));
+ assert(dg_app_key(app,DGK_F6));assert(app->screen==DG_SETUP);app->focus=(uint8_t)dg_entry_row(app,DG_ENTRY_NEW);assert(dg_app_key(app,DGK_F6));
  assert(app->screen==DG_GAME && app->archive.active && dg_current(&app->archive.game)==DG_RED);
 }
 static void navigation(DgApp *app)
@@ -45,6 +45,7 @@ int main(void)
  assert(app.screen==DG_PLAYER && app.players==3 && app.archive.assist==1);redraw(&app,&f);
  assert(dg_app_key(&app,DGK_F6));assert(app.screen==DG_SETUP);
  assert(DG_EASY==0 && DG_HARD==1 && DG_NORMAL==2);
+ assert(dg_app_key(&app,DGK_DOWN));
  assert(dg_app_key(&app,DGK_LEFT));assert(app.level==DG_EASY);
  assert(dg_app_key(&app,DGK_RIGHT));assert(app.level==DG_NORMAL);
  assert(dg_app_key(&app,DGK_RIGHT));assert(app.level==DG_HARD);
@@ -72,12 +73,12 @@ int main(void)
  assert(dg_app_cpu(&app,NULL,NULL));while(app.animation)assert(dg_app_animation(&app));assert(dg_current(&app.archive.game)==DG_RED);
  assert(dg_app_key(&app,DGK_F2));assert(memcmp(&app.archive.game.pos,&unchanged,sizeof unchanged)==0 && !app.archive.game.undo_valid);
  assert(dg_app_key(&app,DGK_F2));assert(memcmp(&app.archive.game.pos,&unchanged,sizeof unchanged)==0);
- assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP);assert(dg_app_key(&app,DGK_F1));assert(app.screen==DG_SETTINGS);
+ assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP);app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_ASSIST);
  assert(dg_app_key(&app,DGK_RIGHT));assert(app.archive.assist==1);assert(dg_app_key(&app,DGK_LEFT));assert(app.archive.assist==0);redraw(&app,&f);
- f.fail=true;assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETTINGS && app.notice[0]);f.fail=false;
- assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP);assert(dg_app_key(&app,DGK_F4));assert(app.screen==DG_RULES);
+ f.fail=true;assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP && app.notice[0]);f.fail=false;
+ assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_PLAYER);assert(dg_app_key(&app,DGK_F6));assert(app.screen==DG_SETUP);assert(dg_app_key(&app,DGK_F4));assert(app.screen==DG_RULES);
  for(int i=0;i<30;i++)assert(dg_app_key(&app,DGK_DOWN));redraw(&app,&f);assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP);
- assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_PLAYER);assert(dg_app_key(&app,DGK_F2));assert(app.screen==DG_GAME && app.archive.game.players==2);
+ assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_PLAYER);assert(dg_app_key(&app,DGK_F1));assert(app.screen==DG_GAME && app.archive.game.players==2);
  assert(dg_app_key(&app,DGK_OFF));assert(f.offs==1);assert(f.saves>0);
  memset(app.archive.game.pos.board,0,sizeof app.archive.game.pos.board);
  for(int n=0;n<DG_NODES;n++){
@@ -89,6 +90,6 @@ int main(void)
  unchanged=app.archive.game.pos;assert(dg_app_key(&app,DGK_F2));assert(memcmp(&unchanged,&app.archive.game.pos,sizeof unchanged)==0);
  assert(dg_app_key(&app,DGK_EXIT));assert(app.modal==DG_MODAL_NONE);assert(dg_app_key(&app,DGK_F2));assert(memcmp(&unchanged,&app.archive.game.pos,sizeof unchanged)==0);
  assert(dg_app_key(&app,DGK_EXE));assert(memcmp(&unchanged,&app.archive.game.pos,sizeof unchanged)==0);redraw(&app,&f);
- printf("UI: setup clamps, real key navigation all73, zoom all73, Assist, warnings, restart, CPU cancel/animation, undo, settings save failure, rules and resume passed; %u draw calls\n",f.rects);
+ printf("UI: setup clamps, real key navigation all73, zoom all73, Assist, warnings, restart, CPU cancel/animation, undo, setup preference save failure, rules and resume passed; %u draw calls\n",f.rects);
  return 0;
 }
