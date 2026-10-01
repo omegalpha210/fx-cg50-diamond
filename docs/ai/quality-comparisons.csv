@@ -1,0 +1,7 @@
+mode,comparison,positions,improved,tied,worse,mean_regret_reduction,common_nonterminal_mean_regret_reduction
+2P,NORMAL_vs_EASY,32,6,22,4,18.71875,19.966666666666665
+2P,HARD_vs_NORMAL,32,9,19,4,31161.53125,38.53333333333333
+2P,HARD_vs_EASY,32,13,15,4,31180.25,58.5
+3P,NORMAL_vs_EASY,32,8,14,10,31155.1875,-76.4
+3P,HARD_vs_NORMAL,32,12,14,6,60.375,64.4
+3P,HARD_vs_EASY,32,14,9,9,31215.5625,-12.0

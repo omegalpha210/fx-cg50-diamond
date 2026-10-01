@@ -1,0 +1,11 @@
+kind,scene,zoom,x,y,radius
+red,piece-readability,0,174,101,4
+green,piece-readability,0,206,101,4
+yellow,piece-readability,0,190,127,4
+empty,piece-readability,0,238,127,4
+cyan,piece-readability,0,198,114,4
+red,piece-readability-zoom,1,150,88,7
+green,piece-readability-zoom,1,214,88,7
+yellow,piece-readability-zoom,1,182,140,7
+empty,piece-readability-zoom,1,278,140,7
+cyan,piece-readability-zoom,1,198,114,7

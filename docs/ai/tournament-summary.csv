@@ -1,0 +1,4 @@
+mode,pair,games,stronger_wins,weaker_wins,diagnostic_repetition_halts,diagnostic_cap_timeouts,illegal_moves,mean_turns,maximum_turns,mean_visited_nodes,mean_host_seconds
+2P,NORMAL_vs_EASY,100,85,15,0,0,0,64.39,78,3772.64,0.005543900000000001
+2P,HARD_vs_NORMAL,100,90,8,2,0,0,68.84,89,89911.2,0.20942456
+2P,HARD_vs_EASY,100,98,2,0,0,0,56.9,70,69130.75,0.15904084

@@ -1,0 +1,9 @@
+build/
+.DS_Store
+__pycache__/
+*.pyc
+dist/*.g3a
+dist/SHA256SUMS.txt
+DGSTATEA.dat
+DGSTATEB.dat
+docs/validation/

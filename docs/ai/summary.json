@@ -1,0 +1,404 @@
+{
+  "schema": 1,
+  "timing": "Host CPU seconds only; calculator timing remains HARDWARE TEST REQUIRED",
+  "reference": "Every legal root move scored separately at a common bounded horizon; same evaluator, wider selective beams; not an oracle",
+  "nonterminal_definition": "Common positions where every level's selected reference utility and best utility have magnitude below 900000",
+  "repetition_policy": "Diagnostic stop on equal occupancy, turn and RNG; gameplay rules have no automatic repetition draw or turn cap",
+  "opening_policy": "Matched fixed-seed EASY openings: eight plies in 2P, nine in 3P; then compared profiles",
+  "quality": [
+    {
+      "mode": "2P",
+      "level": "EASY",
+      "positions": 32,
+      "reference_best_matches": 13,
+      "mean_regret": 31216.09375,
+      "median_regret": 19.0,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 96.73333333333333,
+      "terminal_choice_regrets": 1
+    },
+    {
+      "mode": "2P",
+      "level": "NORMAL",
+      "positions": 32,
+      "reference_best_matches": 15,
+      "mean_regret": 31197.375,
+      "median_regret": 11.0,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 76.76666666666667,
+      "terminal_choice_regrets": 1
+    },
+    {
+      "mode": "2P",
+      "level": "HARD",
+      "positions": 32,
+      "reference_best_matches": 18,
+      "mean_regret": 35.84375,
+      "median_regret": 0.0,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 38.233333333333334,
+      "terminal_choice_regrets": 0
+    },
+    {
+      "mode": "3P",
+      "level": "EASY",
+      "positions": 32,
+      "reference_best_matches": 10,
+      "mean_regret": 31369.75,
+      "median_regret": 66.5,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 152.46666666666667,
+      "terminal_choice_regrets": 1
+    },
+    {
+      "mode": "3P",
+      "level": "NORMAL",
+      "positions": 32,
+      "reference_best_matches": 7,
+      "mean_regret": 214.5625,
+      "median_regret": 170.0,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 228.86666666666667,
+      "terminal_choice_regrets": 0
+    },
+    {
+      "mode": "3P",
+      "level": "HARD",
+      "positions": 32,
+      "reference_best_matches": 14,
+      "mean_regret": 154.1875,
+      "median_regret": 5.0,
+      "common_nonterminal_positions": 30,
+      "common_nonterminal_mean_regret": 164.46666666666667,
+      "terminal_choice_regrets": 0
+    }
+  ],
+  "comparisons": [
+    {
+      "mode": "2P",
+      "comparison": "NORMAL_vs_EASY",
+      "positions": 32,
+      "improved": 6,
+      "tied": 22,
+      "worse": 4,
+      "mean_regret_reduction": 18.71875,
+      "common_nonterminal_mean_regret_reduction": 19.966666666666665
+    },
+    {
+      "mode": "2P",
+      "comparison": "HARD_vs_NORMAL",
+      "positions": 32,
+      "improved": 9,
+      "tied": 19,
+      "worse": 4,
+      "mean_regret_reduction": 31161.53125,
+      "common_nonterminal_mean_regret_reduction": 38.53333333333333
+    },
+    {
+      "mode": "2P",
+      "comparison": "HARD_vs_EASY",
+      "positions": 32,
+      "improved": 13,
+      "tied": 15,
+      "worse": 4,
+      "mean_regret_reduction": 31180.25,
+      "common_nonterminal_mean_regret_reduction": 58.5
+    },
+    {
+      "mode": "3P",
+      "comparison": "NORMAL_vs_EASY",
+      "positions": 32,
+      "improved": 8,
+      "tied": 14,
+      "worse": 10,
+      "mean_regret_reduction": 31155.1875,
+      "common_nonterminal_mean_regret_reduction": -76.4
+    },
+    {
+      "mode": "3P",
+      "comparison": "HARD_vs_NORMAL",
+      "positions": 32,
+      "improved": 12,
+      "tied": 14,
+      "worse": 6,
+      "mean_regret_reduction": 60.375,
+      "common_nonterminal_mean_regret_reduction": 64.4
+    },
+    {
+      "mode": "3P",
+      "comparison": "HARD_vs_EASY",
+      "positions": 32,
+      "improved": 14,
+      "tied": 9,
+      "worse": 9,
+      "mean_regret_reduction": 31215.5625,
+      "common_nonterminal_mean_regret_reduction": -12.0
+    }
+  ],
+  "choice_metrics": [
+    {
+      "mode": "2P",
+      "level": "EASY",
+      "positions": 32,
+      "legal_moves_mean": 50.125,
+      "nodes_mean": 50.125,
+      "nodes_max": 79,
+      "completed_depth_min": 1,
+      "completed_depth_max": 1,
+      "host_seconds_mean": 1.29375e-05,
+      "host_seconds_max": 2.5e-05
+    },
+    {
+      "mode": "2P",
+      "level": "NORMAL",
+      "positions": 32,
+      "legal_moves_mean": 50.125,
+      "nodes_mean": 76.75,
+      "nodes_max": 93,
+      "completed_depth_min": 1,
+      "completed_depth_max": 2,
+      "host_seconds_mean": 0.00018746875,
+      "host_seconds_max": 0.00029
+    },
+    {
+      "mode": "2P",
+      "level": "HARD",
+      "positions": 32,
+      "legal_moves_mean": 50.125,
+      "nodes_mean": 2742.34375,
+      "nodes_max": 5187,
+      "completed_depth_min": 1,
+      "completed_depth_max": 4,
+      "host_seconds_mean": 0.0065465625,
+      "host_seconds_max": 0.0113
+    },
+    {
+      "mode": "3P",
+      "level": "EASY",
+      "positions": 32,
+      "legal_moves_mean": 50.46875,
+      "nodes_mean": 50.46875,
+      "nodes_max": 101,
+      "completed_depth_min": 1,
+      "completed_depth_max": 1,
+      "host_seconds_mean": 1.159375e-05,
+      "host_seconds_max": 1.9e-05
+    },
+    {
+      "mode": "3P",
+      "level": "NORMAL",
+      "positions": 32,
+      "legal_moves_mean": 50.46875,
+      "nodes_mean": 1066.15625,
+      "nodes_max": 1160,
+      "completed_depth_min": 1,
+      "completed_depth_max": 4,
+      "host_seconds_mean": 0.002376,
+      "host_seconds_max": 0.003553
+    },
+    {
+      "mode": "3P",
+      "level": "HARD",
+      "positions": 32,
+      "legal_moves_mean": 50.46875,
+      "nodes_mean": 6887.59375,
+      "nodes_max": 7904,
+      "completed_depth_min": 1,
+      "completed_depth_max": 7,
+      "host_seconds_mean": 0.024273,
+      "host_seconds_max": 0.038805
+    }
+  ],
+  "baseline": [
+    {
+      "mode": "2P",
+      "level": "EASY",
+      "positions": 32,
+      "identical_choice_and_rng": 32,
+      "baseline_nodes_mean": 50.125,
+      "current_nodes_mean": 50.125,
+      "baseline_host_seconds_mean": 1.234375e-05,
+      "current_host_seconds_mean": 1.29375e-05
+    },
+    {
+      "mode": "2P",
+      "level": "HARD",
+      "positions": 32,
+      "identical_choice_and_rng": 31,
+      "baseline_nodes_mean": 2739.4375,
+      "current_nodes_mean": 2742.34375,
+      "baseline_host_seconds_mean": 0.0063664375,
+      "current_host_seconds_mean": 0.0065465625
+    },
+    {
+      "mode": "3P",
+      "level": "EASY",
+      "positions": 32,
+      "identical_choice_and_rng": 32,
+      "baseline_nodes_mean": 50.46875,
+      "current_nodes_mean": 50.46875,
+      "baseline_host_seconds_mean": 1.25e-05,
+      "current_host_seconds_mean": 1.159375e-05
+    },
+    {
+      "mode": "3P",
+      "level": "HARD",
+      "positions": 32,
+      "identical_choice_and_rng": 11,
+      "baseline_nodes_mean": 3471.09375,
+      "current_nodes_mean": 6887.59375,
+      "baseline_host_seconds_mean": 0.00300128125,
+      "current_host_seconds_mean": 0.024273
+    }
+  ],
+  "tournament": [
+    {
+      "mode": "2P",
+      "pair": "NORMAL_vs_EASY",
+      "games": 100,
+      "stronger_wins": 85,
+      "weaker_wins": 15,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 0,
+      "illegal_moves": 0,
+      "mean_turns": 64.39,
+      "maximum_turns": 78,
+      "mean_visited_nodes": 3772.64,
+      "mean_host_seconds": 0.005543900000000001
+    },
+    {
+      "mode": "2P",
+      "pair": "HARD_vs_NORMAL",
+      "games": 100,
+      "stronger_wins": 90,
+      "weaker_wins": 8,
+      "diagnostic_repetition_halts": 2,
+      "diagnostic_cap_timeouts": 0,
+      "illegal_moves": 0,
+      "mean_turns": 68.84,
+      "maximum_turns": 89,
+      "mean_visited_nodes": 89911.2,
+      "mean_host_seconds": 0.20942456
+    },
+    {
+      "mode": "2P",
+      "pair": "HARD_vs_EASY",
+      "games": 100,
+      "stronger_wins": 98,
+      "weaker_wins": 2,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 0,
+      "illegal_moves": 0,
+      "mean_turns": 56.9,
+      "maximum_turns": 70,
+      "mean_visited_nodes": 69130.75,
+      "mean_host_seconds": 0.15904084
+    }
+  ],
+  "three_player": [
+    {
+      "mode": "3P",
+      "level": "EASY",
+      "games": 144,
+      "player_exposures": 144,
+      "wins": 26,
+      "win_share": 0.18055555555555555,
+      "mean_goal_count": 8.277777777777779,
+      "mean_goal_rank_proxy": 2.3784722222222223,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 3,
+      "illegal_moves": 0,
+      "mean_turns": 79.42361111111111,
+      "mean_visited_nodes": 197304.07638888888,
+      "mean_host_seconds": 0.6293496597222222
+    },
+    {
+      "mode": "3P",
+      "level": "NORMAL",
+      "games": 144,
+      "player_exposures": 144,
+      "wins": 46,
+      "win_share": 0.3194444444444444,
+      "mean_goal_count": 9.118055555555555,
+      "mean_goal_rank_proxy": 1.8472222222222223,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 3,
+      "illegal_moves": 0,
+      "mean_turns": 79.42361111111111,
+      "mean_visited_nodes": 197304.07638888888,
+      "mean_host_seconds": 0.6293496597222222
+    },
+    {
+      "mode": "3P",
+      "level": "HARD",
+      "games": 144,
+      "player_exposures": 144,
+      "wins": 69,
+      "win_share": 0.4791666666666667,
+      "mean_goal_count": 9.159722222222221,
+      "mean_goal_rank_proxy": 1.7743055555555556,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 3,
+      "illegal_moves": 0,
+      "mean_turns": 79.42361111111111,
+      "mean_visited_nodes": 197304.07638888888,
+      "mean_host_seconds": 0.6293496597222222
+    },
+    {
+      "mode": "3P_CONTROL",
+      "level": "EASY",
+      "games": 144,
+      "player_exposures": 216,
+      "wins": 18,
+      "win_share": 0.125,
+      "mean_goal_count": 7.939814814814815,
+      "mean_goal_rank_proxy": 2.4652777777777777,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 0,
+      "illegal_moves": 0,
+      "mean_turns": 70.92361111111111,
+      "mean_visited_nodes": 36705.78472222222,
+      "mean_host_seconds": 0.08461039583333334
+    },
+    {
+      "mode": "3P_CONTROL",
+      "level": "NORMAL",
+      "games": 144,
+      "player_exposures": 216,
+      "wins": 126,
+      "win_share": 0.875,
+      "mean_goal_count": 9.476851851851851,
+      "mean_goal_rank_proxy": 1.5347222222222223,
+      "diagnostic_repetition_halts": 0,
+      "diagnostic_cap_timeouts": 0,
+      "illegal_moves": 0,
+      "mean_turns": 70.92361111111111,
+      "mean_visited_nodes": 36705.78472222222,
+      "mean_host_seconds": 0.08461039583333334
+    }
+  ],
+  "rechecks": [
+    {
+      "mode": "2P",
+      "cases": 2,
+      "original_stop_min": 75,
+      "original_stop_max": 75,
+      "extended_cap": 1200,
+      "completed": 0,
+      "still_unfinished": 2,
+      "mean_goal_red": 9.0,
+      "mean_goal_green": 9.0
+    },
+    {
+      "mode": "3P",
+      "cases": 3,
+      "original_stop_min": 400,
+      "original_stop_max": 400,
+      "extended_cap": 1200,
+      "completed": 0,
+      "still_unfinished": 3,
+      "mean_goal_red": 8.333333333333334,
+      "mean_goal_green": 8.0
+    }
+  ]
+}
