@@ -1,4 +1,4 @@
-# DIAMOND beta.2 UI conventions
+# DIAMOND beta.3 UI conventions
 
 The 396×224 display uses the same `dg_render()` on host and native. `draw.c`
 owns clipped integer RGB565 primitives and the pinned gint proportional font;
@@ -14,14 +14,14 @@ are blank, F4 RULES is black/white, F6 NEXT is cyan/black.
 GAME SETUP follows NUM GAME's numbered entry rows, normal font, row focus,
 measured option outlines/underlines and OPEN routing. Matching unfinished
 archives add RESUME at the top; otherwise NEW GAME is first. DIFFICULTY,
-FIRST (2P) or HUMAN (3P), then ASSIST follow. ASSIST is always last. Four rows
+FIRST (2P) or YOU (3P), then ASSIST follow. ASSIST is always last. Four rows
 use y34/34px pitch/29px height; five rows use y30/27px pitch/25px height.
 Number x20, label x43 and option area x146..373 align on every row. Option
 text begins 5px inside its measured width+10 box; the selected 21px box has
 an outline and 2px underline. Row focus remains separate from option selection.
 
 UP/DOWN wraps row focus, as in the inspected NUM GAME controller. LEFT/RIGHT
-clamps EASY/NORMAL/HARD, HUMAN/AI, 1ST/2ND/3RD and OFF/ON. Action rows ignore
+clamps EASY/NORMAL/HARD, YOU/AI, 1ST/2ND/3RD and OFF/ON. Action rows ignore
 LEFT/RIGHT. EXE/F6 OPEN resumes only on RESUME; all other rows start NEW with
 current values. Saved difficulty/turn order/CPU order/seed/RNG/undo are restored
 exactly; current setup selectors cannot overwrite them. ASSIST remains a global
@@ -29,14 +29,18 @@ preference in archive byte 20 and can apply to a resumed game. Leaving setup
 checkpoints a dirty preference. F1/F2/F3/F5 stay blank; F4 RULES and F6 OPEN
 remain. The ASSIST-only SETTINGS screen and SET routes have been removed.
 
-EASY and HUMAN/RED text use the existing green/red piece colors. NORMAL and
-YELLOW actor text use NUM GAME's readable gold RGB5(25,12,0), rather than the
-bright piece fill. TURN prefix is dark and actors colored; the entire centered
+EASY and YOU/RED text use the existing green/red piece colors. NORMAL and
+YELLOW actor text/trails share UI_YELLOW_TEXT = RGB5(21,16,0), RGB565 0xac00.
+YELLOW piece fill remains RGB5(31,24,0), RGB565 0xfe00. [Palette audit](UI_COLOR_AUDIT.md). TURN prefix is dark and actors colored; the entire centered
 mode/difficulty string is green/gold/red. Goal names and every fraction glyph
-share the actor color, with two rows in 2P and three in 3P. Goal dots are gone.
+share the actor color, and result titles use the winner color. Saved-summary
+and result-stat difficulty words use the same level color, with neutral surrounding
+text. Goal progress has two rows in 2P and three in 3P. Goal dots are gone.
 
 Board geometry, fills, thin black outlines, cyan legal endpoints, blue cursor,
-yellow selection, paths and zoom/pan transform are unchanged. Board clipping
+yellow selection and zoom/pan transform are unchanged. AI trails use normalized
+trimmed segments with direction heads and canonical shared-edge lanes;
+[move visualization](AI_MOVE_VISUALIZATION.md) specifies the added layer. Board clipping
 is x4..391/y26..203. The complete overview board bbox, including every possible
 cursor tick, is [115,282)×[27,202). All status/warning backing boxes stay outside
 it with at least 2px space. Text panels use measured width+4 and height 15;
@@ -46,15 +50,21 @@ with a maximum 107×54. Zoom permits overlap using these same compact bounds.
 
 THINKING cycles '.', '..', '...' every 40 existing RTC ticks (312.5ms), via the
 existing foreground AI cancellation hook. It clears/redraws only its fixed box.
-No spinner, per-move timer, RNG/search mutation, flash write or idle reset is
-introduced. Busy EXIT cancels/checkpoints directly to SETUP, including zoom.
+No spinner, per-move timer, RNG/search mutation or internal idle reset is
+introduced. Final chosen CPU moves commit once before replay, then interpolate
+over 15 RTC ticks per hop. The shared wake source is now 20ms (64Hz RTC fallback);
+power still uses elapsed RTC ticks with unchanged dim/APO thresholds.
+Busy EXIT cancels search, or skips committed replay, and checkpoints directly
+to SETUP, including zoom. MENU/OFF also skip replay and checkpoint final state.
+Busy softkeys are blank; MENU/OFF/EXIT remain available.
 Normal EXIT deselects, then returns zoom to overview, then checkpoints to SETUP.
 Restart EXIT cancels; RULES EXIT returns to its parent; result EXIT views the board.
 
 Softkeys occupy 64×18 at x66i+1/y205 on the white y204..223 strip. Empty slots
 stay blank without F-numbers. Gameplay RESTART is yellow, UNDO magenta, primary
 actions red, ordinary actions blue, RULES black/white. SETUP OPEN uses the
-NUM GAME dark/white convention. RULES retains all 21 strings and scroll geometry.
+NUM GAME dark/white convention. RULES retains all 21 facts and scroll geometry; its F2 instruction now says
+"F1 RESTART. F2 UNDO YOUR TURN." All visible HUMAN labels are now YOU.
 Restart/result retain their 244×88 / 244×104 modal boxes and existing game semantics.
 
 [UI polish audit](UI_POLISH_BETA2.md), [captures](screenshots/README.md) and

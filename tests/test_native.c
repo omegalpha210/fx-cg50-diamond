@@ -88,11 +88,11 @@ static void os_entry(void)
 void gint_osmenu(void){os_entry();++mock.menus;record('M');}
 void gint_poweroff(bool key_wait){CHECK(key_wait);os_entry();++mock.offs;record('O');}
 int timer_configure(int timer,uint32_t delay,gint_call_t call)
-{CHECK(timer==TIMER_ANY && delay==50000u && call.without_argument==pulse);return 7;}
+{CHECK(timer==TIMER_ANY && delay==20000u && call.without_argument==pulse);return 7;}
 void timer_start(int timer){CHECK(timer==7);++mock.starts;record('T');}
 void timer_pause(int timer){CHECK(timer==7);++mock.pauses;record('P');}
 bool rtc_periodic_enable(int frequency,gint_call_t call)
-{CHECK(frequency==RTC_16Hz && call.without_argument==pulse);++mock.enables;record('R');return mock.rtc_ok;}
+{CHECK(frequency==RTC_64Hz && call.without_argument==pulse);++mock.enables;record('R');return mock.rtc_ok;}
 void rtc_periodic_disable(void){++mock.disables;record('D');}
 int dg_storage_load(DgArchive *archive){(void)archive;return DG_LOAD_ABSENT;}
 bool dg_storage_save(DgArchive *archive)
@@ -341,6 +341,7 @@ static void test_thinking_progress(void)
   cpu_turn();CHECK(app.animation && !app.thinking);
   CHECK(!memcmp(&app.pending_move,&expected,sizeof expected) && app.pending_rng==rng);
   CHECK(app.ai_stats.nodes==stats.nodes && app.ai_stats.depth==stats.depth && app.ai_stats.beam==stats.beam && app.ai_stats.legal_moves==stats.legal_moves && app.ai_stats.tt_hits==stats.tt_hits);
+  CHECK(dg_commit(&frozen,&expected));frozen.pos.rng=rng;
   CHECK(!memcmp(&frozen,&app.archive.game,sizeof frozen) && !mock.saves);
   CHECK(mock.thinking_phases==7u && mock.updates>=4u);
   CHECK(power_state.idle_ticks>0u && !power_state.dimmed && !mock.light_writes && !mock.offs);
@@ -360,10 +361,38 @@ static void test_thinking_progress(void)
  CHECK(!memcmp(&frozen,&app.archive.game,sizeof frozen) && !memcmp(&frozen,&mock.disk.game,sizeof frozen));
  CHECK(mock.saves==1 && !pending_action && !mock.offs && !mock.menus);
 }
+static void test_animation_clock_and_skip(void)
+{
+ reset();game(3,DG_NORMAL);cpu_turn();CHECK(app.animation && !app.thinking);
+ DgGame committed=app.archive.game;DgPower idle_before=power_state;
+ uint32_t origin=DG_RTC_DAY-2u;animation_last=origin;unsigned updates=0;
+ uint32_t total=(uint32_t)(app.path.length-1u)*DG_HOP_TICKS;
+ for(uint32_t tick=0;tick<=total;tick++){
+  mock.now=(origin+tick)%DG_RTC_DAY;
+  bool changed=animation_frame();CHECK(changed==(tick>0 && tick%DG_FRAME_TICKS==0));
+  if(changed){draw();updates++;}
+  CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
+  CHECK(!memcmp(&idle_before,&power_state,sizeof idle_before) && !mock.saves);
+ }
+ CHECK(updates==total/DG_FRAME_TICKS && !app.animation && app.trails[1].valid);
+ CHECK(mock.starts==0 && mock.enables==0); /* Same shared wake timer, no per-move allocation. */
+ for(unsigned action=0;action<3;action++){
+  reset();game(2,DG_HARD);start_clock();cpu_turn();committed=app.archive.game;
+  mock.now=animation_last+3;CHECK(animation_frame());CHECK(app.anim_phase==1);
+  CHECK(dg_app_key(&app,action==0?DGK_MENU:action==1?DGK_OFF:DGK_EXIT));
+  CHECK(!app.animation && !app.thinking && !app.dirty && mock.saves==1);
+  CHECK(!memcmp(&committed,&mock.disk.game,sizeof committed));
+  CHECK(action==2?app.screen==DG_SETUP:mock.menus+mock.offs==1);
+ }
+ reset();game(3,DG_EASY);start_clock();cpu_turn();committed=app.archive.game;
+ mock.now=600u*128u;idle((key_event_t){0,KEYEV_NONE});CHECK(pending_action==DGK_OFF);
+ CHECK(dg_app_key(&app,pending_action));CHECK(!app.animation && mock.offs==1 && mock.saves==1);
+ CHECK(!memcmp(&committed,&mock.disk.game,sizeof committed));
+}
 int main(void)
 {
  test_shift_and_barrier();test_system_order();test_cpu_keys();test_idle_and_pulse();
- test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();test_thinking_progress();
+ test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();test_thinking_progress();test_animation_clock_and_skip();
  printf("native shim: %u checks passed; real key/barrier/cancel/system/idle code, no hardware claim\n",checks);
  return 0;
 }

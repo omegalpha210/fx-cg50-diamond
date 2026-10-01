@@ -1,6 +1,6 @@
 # Beta.1 UI change audit (historical)
 
-This records v0.1.0-beta.1. Current UI and captures are described in
+This records v0.1.0-beta.1. Current UI and captures are described in [AI_MOVE_VISUALIZATION.md](AI_MOVE_VISUALIZATION.md). The preceding milestone is recorded in
 [UI_POLISH_BETA2.md](UI_POLISH_BETA2.md). Numbered setup rows replace the faces
 in beta.2; the measurements below describe the earlier release.
 

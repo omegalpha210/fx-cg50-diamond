@@ -1,12 +1,17 @@
-# UI polish beta.2 audit
+# Historical UI polish beta.2 audit
+
+This report describes beta.2 as published, including its older HUMAN labels,
+RGB5(25,12,0) gold and uncommitted preview. Beta.3 supersedes those presentation
+details; see [current visualization](AI_MOVE_VISUALIZATION.md). Historical links
+below are pinned to the original release.
 
 Baseline: local `42e5a55e49c53dd2a4cf5a291ec55c076b2817b5`, public
 `f7e111c9c2a12243275875473fbbc30ecb34d628`, release `v0.1.0-beta.1`.
 Before any edits, the actual host tools recorded 720 EASY goldens, 192 fixed
 choices with RNG/nodes/depth/beam and complete engine/undo/save golden output.
 Thirteen engine/game/AI/storage/power files were hashed; both original engine/AI
-unit sources are also frozen. The [fixtures](../tests/fixtures/README.md) carry
-the public-safe untimed records. [Before captures](screenshots/beta1-before/README.md)
+unit sources are also frozen. The [fixtures](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/tests/fixtures/README.md) carry
+the public-safe untimed records. [Before captures](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/beta1-before/README.md)
 are own renderer pixels, not reference-project screenshots.
 
 ## Direct NUM GAME reference
@@ -124,17 +129,17 @@ verified NEW failure, normal EXIT matrix and modal/busy priority. Original
 save/undo/restart/completion cases remain. Renderer tests cover every option
 and focus in both row layouts, exact softkey strips, profile/AI pixels, all
 HUD colors/fractions, centered glyph widths, actual panel bounds and partial
-phase clearing. [Acceptance](ACCEPTANCE.md) and [release validation](BETA_VALIDATION.md)
+phase clearing. [Acceptance](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/ACCEPTANCE.md) and [release validation](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/BETA_VALIDATION.md)
 record strict/UBSan/SH totals and the exact public candidate verification.
 
-Sixty-nine current 396×224 captures cover the required matrix. [Capture index](screenshots/README.md),
-[setup rows](screenshots/setup-rows-sheet.png), [phases](screenshots/thinking-phases.png),
-[before/after](screenshots/ui-polish-before-after.png) and [profile crop](screenshots/player-icons.png)
+Sixty-nine current 396×224 captures cover the required matrix. [Capture index](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/README.md),
+[setup rows](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/setup-rows-sheet.png), [phases](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/thinking-phases.png),
+[before/after](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/ui-polish-before-after.png) and [profile crop](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/screenshots/player-icons.png)
 are actual renderer evidence. Screenshots supplement transition tests.
 
 The exact public candidate repeated 300 2P + 144 mixed 3P + 144 control games
 and both 1,200-ply follow-ups; all untimed fields matched beta.1.
-[Regression fingerprints](ai/ui-beta2-regression.json) record the equality.
+[Regression fingerprints](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/ai/ui-beta2-regression.json) record the equality.
 NUM GAME/SOKOBAN remained clean; DIFF EQ retained only its same pre-existing
 untracked development file. No reference file was edited.
 
@@ -142,4 +147,4 @@ No changes occur under `src/core`, `src/game`, `src/ai`, `src/storage` or the
 power implementation/ABI. Save IDs remain EASY=0, HARD=1, NORMAL=2; v1 A/B
 format and Undo/Restart/RNG rules remain byte-identical. The UI screen enum
 is not serialized. Reference projects are read-only and excluded from public assets.
-All [32 calculator checks](HARDWARE_RETEST.md) are **HARDWARE TEST REQUIRED**.
+All [32 calculator checks](https://github.com/omegalpha210/fx-cg50-diamond/blob/v0.1.0-beta.2/docs/HARDWARE_RETEST.md) are **HARDWARE TEST REQUIRED**.

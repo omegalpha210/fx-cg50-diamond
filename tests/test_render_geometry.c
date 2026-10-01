@@ -63,7 +63,8 @@ static void menu_strip(bool resume,bool setup)
 }
 static void game_strip(bool undo,const char *action,bool idle)
 {
- const char *labels[6]={idle?"RESTART":"",undo?"UNDO":"","","RULES","ZOOM",action};
+ bool busy=!idle && !action[0];
+ const char *labels[6]={idle?"RESTART":"",undo?"UNDO":"","",busy?"":"RULES",busy?"":"ZOOM",action};
  uint16_t bg[6]={UI_RESTART,UI_UNDO,0,UI_BLACK,UI_BLUE,UI_RUN};
  uint16_t fg[6]={UI_BLACK,UI_BLACK,0,UI_WHITE,UI_WHITE,UI_WHITE};strip(labels,bg,fg);
 }
@@ -112,7 +113,7 @@ static void options(DgApp *app)
 {
  static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
  static const char *const level_names[3]={"EASY","NORMAL","HARD"};
- static const char *const first[2]={"HUMAN","AI"},*const slots[3]={"1ST","2ND","3RD"},*const assist_names[2]={"OFF","ON"};
+ static const char *const first[2]={"YOU","AI"},*const slots[3]={"1ST","2ND","3RD"},*const assist_names[2]={"OFF","ON"};
  static const uint16_t inks[3]={PIECE_GREEN,UI_GOLD,PIECE_RED};
  for(uint8_t players=2;players<=3;players++)for(unsigned resume=0;resume<3;resume++){
   assert(dg_new(&app->archive.game,resume==2?(players==2?3:2):players,DG_NORMAL,0,123456));
@@ -121,11 +122,12 @@ static void options(DgApp *app)
   for(unsigned index=0;index<3;index++)for(uint8_t slot=0;slot<players;slot++)for(uint8_t assist=0;assist<2;assist++)for(unsigned focus=0;focus<count;focus++){
    app->level=levels[index];app->slot=slot;app->archive.assist=assist;app->focus=(uint8_t)focus;
    render(app);menu_strip(false,true);
+   if(resume==1)expected_text(12+ui_text_width("Saved: ",1,1)+1,173,"NORMAL",UI_YELLOW_TEXT,1,1);
    for(unsigned row=0;row<count;row++){
     int y=(count==5?30:34)+(int)row*(count==5?27:34),h=count==5?25:29;char number[4];
     snprintf(number,sizeof number,"%u",row+1);expected_text(20,y+9,number,UI_MUTED,1,1);
     unsigned offset=resume==1?1u:0u;
-    const char *label=row<offset?"RESUME":row==offset?"NEW GAME":row==offset+1?"DIFFICULTY":row==offset+2?(players==2?"FIRST":"HUMAN"):"ASSIST";
+    const char *label=row<offset?"RESUME":row==offset?"NEW GAME":row==offset+1?"DIFFICULTY":row==offset+2?(players==2?"FIRST":"YOU"):"ASSIST";
     expected_text(43,y+9,label,UI_INK,1,1);
     int thick=row==focus?2:1;uint16_t edge=row==focus?UI_BLUE:UI_LINE;
     for(int r=0;r<h;r++)for(int c=0;c<376;c++)if(r<thick || r>=h-thick || c<thick || c>=376-thick){
@@ -238,16 +240,20 @@ static void modal_bounds(DgApp *app)
  expected_text(76+(244-ui_text_width("RESTART GAME?",1,1))/2,75,"RESTART GAME?",UI_INK,1,1);
  expected_text(98,109,"EXE: YES",UI_INK,1,1);expected_text(98,126,"EXIT: NO",UI_INK,1,1);
  app->modal=DG_MODAL_RESULT;
- for(uint8_t players=2;players<=3;players++)for(uint8_t winner=DG_RED;winner<=DG_GREEN;winner++){
+ static const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
+ for(uint8_t players=2;players<=3;players++)for(uint8_t winner=DG_RED;winner<=DG_GREEN;winner++)for(unsigned index=0;index<3;index++){
   if(players==2 && winner==DG_YELLOW)continue;
-  app->archive.game.players=players;app->archive.game.pos.winner=winner;
+  app->archive.game.players=players;app->archive.game.pos.winner=winner;app->archive.game.level=levels[index];
   app->archive.game.pos.turns=UINT32_MAX;render(app);blank_strip();box(76,50,244,104,UI_INK,2);
   const char *title=winner==DG_RED?"YOU WIN":players==2?"AI WINS":winner==DG_YELLOW?"YELLOW AI WINS":"GREEN AI WINS";
   int tw=ui_text_width(title,3,2);assert(tw<=200);
-  expected_text(76+(244-tw)/2,67,title,UI_INK,3,2);
-  char stats[32];snprintf(stats,sizeof stats,"TURNS %lu   EASY",(unsigned long)UINT32_MAX);
+  expected_text(76+(244-tw)/2,67,title,ui_actor_color(winner),3,2);
+  const char *level=ui_level_label(levels[index]);
+  char stats[32],prefix[32];snprintf(stats,sizeof stats,"TURNS %lu   %s",(unsigned long)UINT32_MAX,level);
+  snprintf(prefix,sizeof prefix,"TURNS %lu   ",(unsigned long)UINT32_MAX);
   int sw=ui_text_width(stats,1,1);assert(sw<=200);
-  expected_text(76+(244-sw)/2,93,stats,UI_MUTED,1,1);
+  expected_text(76+(244-sw)/2,93,prefix,UI_MUTED,1,1);
+  expected_text(76+(244-sw)/2+sw-ui_text_width(level,1,1),93,level,ui_level_color(levels[index]),1,1);
   expected_text(98,114,"EXE: NEW GAME",UI_INK,1,1);expected_text(98,131,"EXIT: VIEW BOARD",UI_INK,1,1);
  }
  app->modal=DG_MODAL_NONE;render(app);game_strip(false,"NEW",false);
@@ -262,7 +268,7 @@ static void hud_bounds(DgApp *app)
   for(uint8_t turn=0;turn<players;turn++){
    app->archive.game.pos.turn=turn;render(app);
    uint8_t current=dg_current(&app->archive.game);
-   const char *label=current==DG_RED?"HUMAN":current==DG_GREEN?"GREEN AI":"YELLOW AI";
+   const char *label=current==DG_RED?"YOU":current==DG_GREEN?"GREEN AI":"YELLOW AI";
    const char *level_name=index==0?"EASY":index==1?"NORMAL":"HARD";
    char config[20],counter[20];snprintf(config,sizeof config,"%uP / %s",(unsigned)players,level_name);
    snprintf(counter,sizeof counter,"T %lu",(unsigned long)UINT32_MAX);
@@ -346,6 +352,18 @@ static void goal_colors(DgApp *app)
   }
  }
 }
+static void animated_hud(void)
+{
+ DgApp app;dg_app_init(&app,(DgHooks){0},812713);
+ assert(dg_new(&app.archive.game,3,DG_NORMAL,1,1));app.archive.active=1;app.screen=DG_GAME;
+ uint8_t actor=dg_current(&app.archive.game);assert(dg_app_cpu(&app,NULL,NULL));
+ assert(app.animation && actor!=dg_current(&app.archive.game));render(&app);blank_strip();
+ int x=8+ui_text_width("TURN : ",1,1)+1;
+ expected_text(x,6,actor==DG_GREEN?"GREEN AI":"YELLOW AI",ui_actor_color(actor),1,1);
+ while(app.animation)assert(dg_app_animation(&app));render(&app);
+ uint8_t current=dg_current(&app.archive.game);
+ expected_text(x,6,current==DG_RED?"YOU":current==DG_GREEN?"GREEN AI":"YELLOW AI",ui_actor_color(current),1,1);
+}
 int main(void)
 {
  assert(ui_text_width("RESTART",1,1)==57 && ui_text_width("SELECT",1,1)==48);
@@ -379,7 +397,7 @@ int main(void)
  render(&app);game_strip(true,"SELECT",true);
  app.selected=moves[0].to;render(&app);game_strip(true,"MOVE",true);
  app.selected=DG_NONE;app.thinking=1;render(&app);game_strip(false,"",false);app.thinking=0;
- modal_bounds(&app);
+ modal_bounds(&app);animated_hud();
  printf("Renderer geometry PASS: %u immutable frames, %u bounded rectangles; exact softkeys, profile/AI icons, solid discs/Assist, fonts, selectors, HUD/cursors, all rule offsets, notices and modals\n",frames,calls);
  return 0;
 }

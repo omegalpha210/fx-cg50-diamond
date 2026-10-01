@@ -50,11 +50,12 @@ static void cpu_response(DgApp *app)
 {
  DgPosition before=app->archive.game.pos;
  CHECK(dg_app_cpu(app,NULL,NULL));CHECK(app->animation && !app->thinking);
- CHECK(!memcmp(&before,&app->archive.game.pos,sizeof before));
- DgMove valid;CHECK(dg_find_move(before.board,dg_current(&app->archive.game),
+ CHECK(app->archive.game.pos.turns==before.turns+1);
+ CHECK(!memcmp(before.board,app->animation_board,DG_NODES));
+ DgMove valid;CHECK(dg_find_move(before.board,app->animation_actor,
   app->pending_move.from,app->pending_move.to,&valid,NULL));
  CHECK(!memcmp(&valid,&app->pending_move,sizeof valid));
- unsigned ticks=0;while(app->animation){CHECK(dg_app_animation(app));CHECK(++ticks<=DG_NODES+1);}
+ unsigned ticks=0;while(app->animation){CHECK(dg_app_animation(app));CHECK(++ticks<=DG_NODES*DG_HOP_FRAMES);}
  CHECK(app->archive.game.pos.turns==before.turns+1);
  CHECK(dg_game_valid(&app->archive.game));
 }
@@ -132,9 +133,10 @@ static void test_cpu_cancellation(void)
   CHECK(!dg_app_cpu(&app,cancel_hook,&cancel));CHECK(app.ai_stats.cancelled);
   CHECK(state.systems==1 && !state.off && !app.animation && !app.thinking);
   CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
-  /* CPU animation is a preview; OFF cancels it before committing its RNG. */
+  /* Final AI board/RNG commit precedes visual frames; OFF skips only pixels. */
   CHECK(dg_app_cpu(&app,NULL,NULL));CHECK(app.animation);
-  CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
+  CHECK(app.archive.game.pos.turns==committed.pos.turns+1);
+  committed=app.archive.game;
   CHECK(dg_app_key(&app,DGK_OFF));CHECK(!app.animation && state.off);
   CHECK(!dg_app_animation(&app));
   CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
@@ -223,6 +225,39 @@ static void test_completion(void)
  state.fail=false;CHECK(dg_app_key(&app,DGK_MENU));CHECK(state.systems==1);
  CHECK(!state.disk.active && !app.dirty);
  CHECK(dg_storage_cleanup());
+}
+static void test_atomic_visual_system(void)
+{
+ for(uint8_t players=2;players<=3;players++)for(unsigned action=0;action<3;action++){
+  DgApp app;State state;begin(&app,&state,players,1,DG_NORMAL);
+  DgGame before=app.archive.game;unsigned saves=state.saves;
+  CHECK(dg_app_cpu(&app,NULL,NULL));CHECK(app.animation && app.dirty);
+  CHECK(app.archive.game.pos.turns==before.pos.turns+1);
+  DgGame committed=app.archive.game;CHECK(dg_app_animation_tick(&app,3));
+  CHECK(state.saves==saves && !memcmp(&committed,&app.archive.game,sizeof committed));
+  app.zoom=1;CHECK(dg_app_key(&app,action==0?DGK_MENU:action==1?DGK_OFF:DGK_EXIT));
+  CHECK(!app.animation && !app.thinking && state.saves==saves+1);
+  CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
+  CHECK(!memcmp(&committed,&state.disk.game,sizeof committed));
+  CHECK(app.trails[1].valid && app.trails[1].path.length>=2);
+  if(action==2)CHECK(app.screen==DG_SETUP && !state.systems);
+  else CHECK(state.systems==1 && state.last_save<state.last_system);
+ }
+ for(uint8_t actor=DG_YELLOW;actor<=DG_GREEN;actor++)for(unsigned action=0;action<3;action++){
+  DgApp app;State state;begin(&app,&state,3,1,DG_EASY);int from,to;
+  near_win(&app,actor,&from,&to);unsigned saves=state.saves;
+  CHECK(dg_app_cpu(&app,NULL,NULL));CHECK(app.animation && !app.modal);
+  CHECK(app.archive.game.pos.winner==actor && !app.archive.active && !app.dirty);
+  CHECK(state.saves==saves+1 && !state.disk.active);DgGame committed=app.archive.game;
+  CHECK(dg_app_animation_tick(&app,3));CHECK(state.saves==saves+1);
+  CHECK(!dg_app_key(&app,DGK_F6) && app.animation && !app.modal);
+  CHECK(dg_app_key(&app,action==0?DGK_MENU:action==1?DGK_OFF:DGK_EXIT));
+  CHECK(!app.animation && !state.disk.active && same_archive(&app.archive,&state.disk));
+  CHECK(!memcmp(&committed,&app.archive.game,sizeof committed) && !app.archive.active);
+  CHECK(state.saves==saves+1);
+  if(action==2)CHECK(app.screen==DG_SETUP && app.modal==DG_MODAL_NONE && !dg_app_resumable(&app));
+  else CHECK(state.systems==1 && app.modal==DG_MODAL_RESULT);
+ }
 }
 static void test_entry_contract(void)
 {
@@ -332,7 +367,7 @@ static void test_exit_hierarchy(void)
 int main(void)
 {
  test_replacement_failure();test_lifecycle_checkpoints();test_cpu_cancellation();
- test_undo_restart();test_completion();test_entry_contract();test_exit_hierarchy();
+ test_undo_restart();test_completion();test_atomic_visual_system();test_entry_contract();test_exit_hierarchy();
  printf("app: %u checks passed; save faults, cancellation, undo, restart, completion\n",checks);
  return 0;
 }

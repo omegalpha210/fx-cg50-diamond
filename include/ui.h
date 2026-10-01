@@ -5,6 +5,7 @@
 enum { DG_PLAYER,DG_SETUP,DG_RULES,DG_GAME };
 enum { DG_ENTRY_RESUME,DG_ENTRY_NEW,DG_ENTRY_LEVEL,DG_ENTRY_SLOT,DG_ENTRY_ASSIST };
 enum { DG_THINKING_TICKS=40 }; /* 312.5 ms at the existing RTC's 128 Hz. */
+enum { DG_HOP_TICKS=15,DG_FRAME_TICKS=3,DG_HOP_FRAMES=5 };
 enum { DG_MODAL_NONE,DG_MODAL_RESTART,DG_MODAL_RESULT };
 enum { DGK_UP=1,DGK_DOWN,DGK_LEFT,DGK_RIGHT,DGK_EXE,DGK_EXIT,DGK_F1,DGK_F2,DGK_F3,DGK_F4,DGK_F5,DGK_F6,DGK_MENU,DGK_OFF };
 typedef struct {
@@ -12,6 +13,8 @@ typedef struct {
  bool (*save)(void *,DgArchive *);
  void (*system)(void *,bool);
 } DgHooks;
+/* Presentation only; never part of DgArchive, v1 storage or undo. */
+typedef struct { uint8_t valid,player;DgPath path; } DgAiTrail;
 typedef struct {
  DgArchive archive;
  DgHooks hooks;
@@ -19,6 +22,10 @@ typedef struct {
  uint8_t screen,parent,modal,players,level,slot,focus;
  uint8_t cursor,selected,zoom,rules_scroll,thinking,thinking_phase,animation,anim_index;
  uint8_t dirty;
+ uint8_t animation_actor,anim_phase;
+ uint16_t animation_ticks;
+ uint8_t animation_board[DG_NODES];
+ DgAiTrail trails[2]; /* chronological: earlier, later */
  char notice[48];
  DgPath path;
  DgMove pending_move;
@@ -31,6 +38,8 @@ bool dg_app_key(DgApp *app,int key);
 bool dg_checkpoint(DgApp *app);
 bool dg_app_cpu(DgApp *app,DgCancel cancel,void *context);
 bool dg_app_animation(DgApp *app);
+bool dg_app_animation_tick(DgApp *app,uint32_t elapsed_ticks);
+void dg_app_skip_animation(DgApp *app);
 bool dg_app_resumable(const DgApp *app);
 bool dg_setup_resume(const DgApp *app);
 unsigned dg_entry_count(const DgApp *app);

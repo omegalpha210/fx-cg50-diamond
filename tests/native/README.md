@@ -13,12 +13,16 @@ Storage transaction correctness has its own tests.
 
 Host CMake must put `tests/native` before other include paths and link the
 native test executable against `diamond_ui`. SDK headers and this test are
-excluded from the calculator target. The native infinite event loop itself
+excluded from the calculator target. The actual time-derived animation foreground helper is also exercised, including
+midnight wrap, frame thresholds, input gating and APO during replay. The shared
+wake timer is 20ms, with 64Hz RTC fallback, and allocates no per-move timer.
+The native infinite event loop itself
 is reviewed, while its actual constituent functions are exercised directly.
 
 Validated cases include SHIFT tap/release and held SHIFT plus AC/ON; held-key
 barriers and DOWN/UP/HOLD handling; the bounded 32-event callback drain; CPU
-MENU/OFF/EXIT cancellation without committing board/RNG/turn changes; save
+search MENU/OFF/EXIT cancellation without committing board/RNG/turn changes;
+replay system requests preserving already committed board/RNG/turn changes; save
 and handle-cleanup failures preventing OS entry; ETMU/RTC pause and resume;
 and dim/APO with no idle reset from rendering or timer callbacks.
 

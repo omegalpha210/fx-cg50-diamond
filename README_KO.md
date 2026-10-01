@@ -7,19 +7,22 @@
 판단하는 GREEN·YELLOW AI와 대결합니다. 동일한 능력의 말 10개를 반대편
 진영으로 먼저 옮기면 승리합니다.
 
-[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2) · [규칙](docs/GAME_RULES.md)
+[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3) · [규칙](docs/GAME_RULES.md)
 
-![공통 렌더러의 실제 3P 화면](docs/screenshots/3p-overview.png)
+![공통 렌더러의 실제 3P 화면](docs/screenshots/trails-you.png)
 
 **실험적 beta — HARDWARE TEST REQUIRED.** 호스트 테스트와 패키지 검사로
 검증한 버전입니다. 실제 fx-CG50 화면·저장·전원 동작·AI 응답 시간은
-[32개 실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
+[46개 실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
 
 - **2P / 3P:** 선공 또는 인간의 차례 위치를 선택합니다.
 - **EASY / NORMAL / HARD:** 번호 행의 초록·읽기 쉬운 금색·빨강 텍스트로 선택합니다.
   EASY는 휴리스틱과 시드 기반 무작위 선택, NORMAL은 제한된 얕은 탐색,
   HARD는 더 큰 범위의 제한 탐색을 사용합니다. 2P는 alpha-beta, 3P는 각 플레이어의
   점수를 따로 최대화하는 MaxN입니다. [AI 검증](docs/AI_DIFFICULTY_AUDIT.md).
+- **AI 이동:** 탐색이 끝난 최종 수만 RTC 기준 구간당 117.1875ms로 재생합니다.
+  GREEN·YELLOW 방향 화살표 흔적은 다음 합법적인 사용자 이동까지 남습니다.
+  [이동 표시와 중단 동작](docs/AI_MOVE_VISUALIZATION.md).
 - **ASSIST:** 합법적인 도착 칸을 청록색으로 채웁니다. OFF로 숨길 수 있습니다.
 - **UNDO:** 인간의 직전 결정과 이어진 모든 AI 응답을 한 번 되돌립니다.
 - **RESTART:** 확인 후 같은 난이도·시드·차례 순서로 다시 시작합니다.
@@ -33,7 +36,7 @@
 
 ## 설치와 시작
 
-[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2)에서
+[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3)에서
 `DIAMOND.g3a`와 `SHA256SUMS.txt`를 받습니다. 아래 명령으로 체크섬을 확인하고,
 USB로 계산기 저장 메모리 최상위에 G3A를 복사한 뒤 안전하게 연결을 해제합니다.
 CASIO Main Menu에서 DIAMOND를 실행합니다.
@@ -48,7 +51,7 @@ PLAYER는 3P가 기본입니다. EXE/F6 NEXT로 GAME SETUP을 엽니다.
 RED 아이콘에는 흰 머리·어깨 실루엣, AI 아이콘에는 가운데 AI 글자가 표시됩니다.
 
 GAME SETUP은 같은 인원 수의 저장이 있을 때만 RESUME 행을 추가합니다.
-NEW GAME → DIFFICULTY → FIRST(2P)/HUMAN(3P) → ASSIST 순서이며 ASSIST는
+NEW GAME → DIFFICULTY → FIRST(2P)/YOU(3P) → ASSIST 순서이며 ASSIST는
 항상 마지막입니다. UP/DOWN으로 행을 고르고 LEFT/RIGHT로 난이도, 선공/인간 순서,
 Assist OFF/ON을 바꿉니다. 양 끝에서 멈춥니다. EXE/F6 OPEN은 RESUME 행에서만
 이어가고, 나머지 모든 행에서는 현재 설정으로 새 게임을 시작합니다.
@@ -119,3 +122,7 @@ ctest --test-dir build/ubsan --output-on-failure
 차용한 도우미, gint 폰트, 런타임은 [별도 고지](THIRD_PARTY_NOTICES.md)를
 유지합니다. 기사·보드 사진·Sokoban 맵·비공개 참조 화면은 배포하지 않습니다.
 CASIO와의 제휴 또는 공식 보증을 뜻하지 않습니다.
+
+현재 AI 애니메이션·흔적의 상태 수명과 중단 동작은
+[AI_MOVE_VISUALIZATION](docs/AI_MOVE_VISUALIZATION.md), 실제 색상 값은
+[UI_COLOR_AUDIT](docs/UI_COLOR_AUDIT.md)에 기록했습니다.

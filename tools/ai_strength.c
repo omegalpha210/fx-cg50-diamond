@@ -69,6 +69,20 @@ static void choices(void)
 #ifndef DG_STRENGTH_BASELINE
 static const char *level_name(uint8_t level)
 {return level==DG_EASY?"EASY":(level==DG_NORMAL?"NORMAL":"HARD");}
+static void paths(void)
+{
+ puts("mode,position,level,from,to,type,hops,next_rng,nodes,path");
+ const uint8_t levels[3]={DG_EASY,DG_NORMAL,DG_HARD};
+ for(unsigned mode=0;mode<2;mode++)for(unsigned pos=0;pos<POSITION_COUNT;pos++)for(unsigned l=0;l<3;l++){
+  DgGame g=suite[mode][pos];g.level=levels[l];DgMove m;DgPath p={0};uint32_t rng;DgAiStats stats;
+  CHECK(dg_ai_choose(&g,0,NULL,NULL,&m,&rng,&stats));
+  CHECK(dg_find_move(g.pos.board,dg_current(&g),m.from,m.to,NULL,&p));
+  printf("%uP,%u,%s,%u,%u,%u,%u,%lu,%lu,",(unsigned)g.players,pos,level_name(g.level),(unsigned)m.from,(unsigned)m.to,(unsigned)m.type,(unsigned)m.hops,(unsigned long)rng,(unsigned long)stats.nodes);
+  for(unsigned n=0;n<p.length;n++)printf(n?":%u":"%u",(unsigned)p.node[n]);
+  puts("");
+ }
+}
+
 static unsigned number(const char *text,unsigned fallback)
 {
  if(text==NULL)return fallback;char *end=NULL;unsigned long value=strtoul(text,&end,10);
@@ -272,7 +286,7 @@ int main(int argc,char **argv)
  else if(argc>1 && !strcmp(argv[1],"--tournament"))tournament(number(argc>2?argv[2]:NULL,25u),number(argc>3?argv[3]:NULL,400u));
  else if(argc>1 && !strcmp(argv[1],"--3p"))three_player(number(argc>2?argv[2]:NULL,8u),number(argc>3?argv[3]:NULL,400u),false);
  else if(argc>1 && !strcmp(argv[1],"--3p-control"))three_player(number(argc>2?argv[2]:NULL,8u),number(argc>3?argv[3]:NULL,400u),true);
- else{build_suite();if(argc>1 && !strcmp(argv[1],"--quality"))quality();else choices();}
+ else{build_suite();if(argc>1 && !strcmp(argv[1],"--quality"))quality();else if(argc>1 && !strcmp(argv[1],"--paths"))paths();else choices();}
 #else
  (void)argc;(void)argv;build_suite();choices();
 #endif

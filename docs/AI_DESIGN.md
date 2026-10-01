@@ -70,8 +70,10 @@ The guard does not reject any legal move or replace engine validation.
 Root candidate ordering polls cancellation per candidate; internal ordering and
 visited nodes poll at most every 32 entries. The foreground callback observes
 physical input and power deadlines. Cancellation returns no move and leaves
-committed board/turn/RNG/undo unchanged. Pending animation is also uncommitted;
-MENU/OFF/APO checkpoint the last committed state.
+committed board/turn/RNG/undo unchanged. Beta.3 presentation obtains the same deterministic representative path, commits
+the final move/RNG once through the engine, then replays a 73-byte visual
+pre-board. MENU/OFF/APO skip only that replay and checkpoint final state.
+[Visualization](AI_MOVE_VISUALIZATION.md) is separate from this unchanged search.
 
 There is no heap allocation or transposition table. Legal move storage and
 per-depth candidate/ancestor arrays are static and reserve seven plies.

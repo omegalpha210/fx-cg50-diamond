@@ -37,11 +37,15 @@ Installed gint is 2.11, revision `badbd0fd2bd8ac796fd55d49b93691741bd8a139`. Its
 
 A dimmed wake key restores brightness and passes through normal key translation once. Non-direction HOLD events cannot duplicate an EXE/menu/modal action. Direction HOLD follows the existing repeat policy. Input barriers retain the established held-key protections.
 
-The allocated 50 ms gint timer is the normal wake source; `rtc_periodic_enable(RTC_16Hz, ...)` is the allocation-failure fallback. Their `pulse()` callback only sets a wake flag. It performs no RTC query, flash write, power call, rendering, game mutation or AI work. Native foreground functions perform all power decisions.
+The allocated 20 ms gint timer is the normal wake source; `rtc_periodic_enable(RTC_64Hz, ...)` is the allocation-failure fallback. Their `pulse()` callback only sets a wake flag. It performs no RTC query, flash write, power call, rendering, game mutation or AI work. Native foreground functions perform all power decisions. This is the same shared
+wake source, with finer visual polling; RTC-based dim/APO values, physical-input
+activity rules and OS handoff order are unchanged.
 
-During CPU search, the bounded cooperative callback reads physical events, advances idle time and sets a pending action. It returns cancellation before the app dispatches OFF/MENU. Only the last committed board/turn/RNG is checkpointed; partial search results and pending animation are discarded. Successful OS entry follows this order:
+During CPU search, the bounded cooperative callback reads physical events, advances idle time and sets a pending action. It returns cancellation before the app dispatches OFF/MENU. Only the last committed board/turn/RNG is checkpointed; partial search results are discarded. Beta.3 replay is visual only: its final move
+has already committed, so skipping it retains final board/turn/RNG. Winning
+commits save the unchanged inactive v1 tombstone before replay. Successful OS entry follows this order:
 
-1. Cancel pending search/animation and checkpoint dirty committed state.
+1. Cancel pending search or finish visual replay; checkpoint dirty final committed state.
 2. Clean up native storage handles.
 3. Pause the app wake source and restore any saved brightness.
 4. Drain/block held input, then invoke the supported MENU or OFF helper.

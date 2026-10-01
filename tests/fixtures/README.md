@@ -19,3 +19,11 @@ freezes both engine/AI unit sources, including all 720 EASY golden choices,
 and preserves the 21 rule strings. UI/controller files may implement the
 requested setup/EXIT/visual behavior; persisted difficulty IDs and v1 codec
 remain frozen.
+
+Beta.3 adds `ai-paths-beta2.csv`, recorded before edits from the same 192 fixed
+positions/levels: chosen endpoints/type/hops, representative node sequence,
+ending RNG and nodes. `selfplay-*-beta2.csv` stores 48 untimed pre-edit smoke
+records plus the one still-capped 1200-ply follow-up. `verify_visual_regression.py`
+checks every field and fingerprints. These are constructed or seeded host
+fixtures, never personal saves. `rules.json` changes only the approved F2
+wording to "F1 RESTART. F2 UNDO YOUR TURN."; all 21 rule facts remain.

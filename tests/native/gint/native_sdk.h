@@ -37,8 +37,8 @@ int gint_world_switch(gint_call_t call);
 void gint_osmenu(void);
 void gint_poweroff(bool key_wait);
 typedef struct { uint16_t year;uint8_t month_day,month; } rtc_time_t;
-/* Installed gint uses selector 3 for the 16-Hz periodic RTC interrupt. */
-#define RTC_16Hz 3
+/* Installed gint uses selector 2 for the 64-Hz periodic RTC interrupt. */
+#define RTC_64Hz 2
 uint32_t rtc_ticks(void);
 void rtc_get_time(rtc_time_t *time);
 bool rtc_periodic_enable(int frequency,gint_call_t call);

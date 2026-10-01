@@ -1,28 +1,27 @@
 # Public beta publication
 
-Repository/account: `omegalpha210/fx-cg50-diamond`. The current prerelease is
-[v0.1.0-beta.2](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.2).
-Its source is a normal descendant of beta.1 commit
-`f7e111c9c2a12243275875473fbbc30ecb34d628`. The beta.1 commit, annotated tag
-and release stay unchanged. Private local development history remains local.
+Repository/account: `omegalpha210/fx-cg50-diamond`. Current prerelease:
+[v0.1.0-beta.3](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3).
+Its public source is a normal descendant of beta.2 `775310a178da07b275af3ecf0817339cbbae19d2`,
+which descends from beta.1 `f7e111c9c2a12243275875473fbbc30ecb34d628`.
+Old commits/tags/releases remain unchanged. Private local development history
+stays local; no force push or unrelated new root is used.
 
-The initial beta.1 snapshot excluded old commits with personal absolute paths
-and private reference screenshots. Beta.2 copies the audited allowlist into a
-checkout of the existing public branch and commits on that ancestry; no force
-push, tag movement or separate unrelated root is used.
+The initial beta.1 snapshot excluded personal paths and private reference images.
+Beta.3 copies the reviewed allowlist into a clean checkout of the existing public
+branch. `tools/public_snapshot.py --check` scans source/docs for private paths,
+credentials, symlinks, personal saves and broken relative links. `--check-git`
+audits every tracked public file. The full public ancestry is also audited.
+New AI_MOVE_VISUALIZATION/UI_COLOR_AUDIT reports are explicitly allowlisted;
+original code/tests/tools/assets, EN/KO README, own captures and retained licenses
+are included. Toolchains, raw logs/maps/ELFs/caches, personal saves and private
+reference screenshots remain excluded. Reference projects remain read-only.
 
-`tools/public_snapshot.py --check` scans allowed source/docs for paths,
-credentials, symlinks, user saves and broken local links. `--output` makes a
-fresh file snapshot; `--check-git` audits every tracked public file. Original
-code/tests/tools/assets, EN/KO README, own captures and retained licenses are
-included. Toolchains, caches, raw logs/maps/ELFs, private reference screenshots
-and personal saves are excluded. New ACCEPTANCE/UI_POLISH_BETA2 reports are
-explicitly allowlisted after public-content review.
-
-The clean exact source candidate runs strict host, UBSan, AI fixed-choice and
-selfplay regression, save/power/native tests and strict SH compilation. Captures
-are regenerated and compared to the local output. G3A and SHA256SUMS come from
-that tree. Both uploaded assets are downloaded again and compared byte-for-byte,
-with checksum-file verification and GitHub SHA256 digests. Release notes record
-verification after upload. Source identity is reproducible with
-`git rev-parse v0.1.0-beta.2^{commit}`; the final delivery gives the exact commit.
+The clean exact source runs strict host, full UBSan, all choice/path goldens,
+representative selfplay, UI/native/storage/power tests, strict SH, package checks
+and actual renderer captures. Local and candidate artifact/capture bytes match.
+The candidate-built G3A and SHA256SUMS are uploaded, re-downloaded and compared
+byte-for-byte, with checksum verification and both GitHub SHA256 digest fields.
+Release notes record post-upload verification. Exact public identity is obtained
+with `git rev-parse v0.1.0-beta.3^{commit}`; the delivery report gives the commit.
+All native behavior remains HARDWARE TEST REQUIRED.

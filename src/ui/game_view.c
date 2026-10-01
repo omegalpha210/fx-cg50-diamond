@@ -39,12 +39,14 @@ static void board(DgPainter *p,const DgApp *app)
  }
  for(int n=0;n<DG_NODES;n++){int x,y;dg_screen_position(app,n,&x,&y);
   for(int d=0;d<3;d++){int next=dg_nodes[n].neighbor[d];if(next>=0){int tx,ty;dg_screen_position(app,next,&tx,&ty);ui_line(&b,x,y,tx,ty,UI_LINE);}}}
- if(app->path.length>1 && (app->selected!=DG_NONE || app->animation))
+ if(app->path.length>1 && app->selected!=DG_NONE && !app->animation)
   for(unsigned i=1;i<app->path.length;i++){int x,y,tx,ty;dg_screen_position(app,app->path.node[i-1],&x,&y);
    dg_screen_position(app,app->path.node[i],&tx,&ty);ui_line(&b,x,y,tx,ty,BOARD_CYAN);ui_line(&b,x+1,y,tx+1,ty,BOARD_CYAN);}
+ /* Keep retained AI heads readable when the current YOU preview shares a route. */
+ ui_trails(&b,app);
  int radius=app->zoom?7:4;
  for(int n=0;n<DG_NODES;n++){int x,y;dg_screen_position(app,n,&x,&y);
-  uint8_t who=g->pos.board[n];
+  uint8_t who=app->animation?app->animation_board[n]:g->pos.board[n];
   bool occupied=who!=DG_EMPTY && !(app->animation && n==(int)app->pending_move.from);
   ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,occupied?ui_piece_color(who):UI_WHITE);
  }
@@ -53,9 +55,9 @@ static void board(DgPainter *p,const DgApp *app)
   for(size_t i=0;i<count;i++){int x,y;dg_screen_position(app,moves[i].to,&x,&y);
    ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,BOARD_CYAN);}}
  if(app->selected<DG_NODES){int x,y;dg_screen_position(app,app->selected,&x,&y);ui_ring(&b,x,y,radius+3,PIECE_YELLOW);ui_ring(&b,x,y,radius+4,BOARD_INK);}
- if(app->animation && app->path.length){unsigned at=app->anim_index;if(at>=app->path.length)at=app->path.length-1;
-  int x,y;dg_screen_position(app,app->path.node[at],&x,&y);
-  ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,ui_piece_color(dg_current(g)));}
+ if(app->animation && app->path.length>1){
+  int x,y;ui_animation_position(app,&x,&y);
+  ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,ui_piece_color(app->animation_actor));}
  if(app->cursor<DG_NODES){int x,y;dg_screen_position(app,app->cursor,&x,&y);int r=radius+5;
   ui_border(&b,x-r,y-r,2*r+1,2*r+1,BOARD_BLUE,1);ui_rect(&b,x-r-2,y,3,1,BOARD_BLUE);ui_rect(&b,x+r,y,3,1,BOARD_BLUE);}
 }
@@ -72,10 +74,10 @@ void ui_thinking(DgPainter *p,const DgApp *app)
 }
 static void status(DgPainter *p,const DgApp *app)
 {
- const DgGame *g=&app->archive.game;uint8_t current=dg_current(g);char value[40];
+ const DgGame *g=&app->archive.game;uint8_t current=app->animation?app->animation_actor:dg_current(g);char value[40];
  ui_rect(p,0,0,396,24,UI_WHITE);ui_rect(p,0,23,396,1,UI_LINE);
  ui_text(p,8,6,"TURN :",UI_INK,1,1);
- ui_text(p,8+ui_text_width("TURN : ",1,1)+1,6,current==DG_RED?"HUMAN":current==DG_GREEN?"GREEN AI":"YELLOW AI",ui_actor_color(current),1,1);
+ ui_text(p,8+ui_text_width("TURN : ",1,1)+1,6,current==DG_RED?"YOU":current==DG_GREEN?"GREEN AI":"YELLOW AI",ui_actor_color(current),1,1);
  snprintf(value,sizeof value,"%uP / %s",(unsigned)g->players,ui_level_label(g->level));
  ui_center(p,0,6,396,value,ui_level_color(g->level),1,1);
  snprintf(value,sizeof value,"T %lu",(unsigned long)g->pos.turns);
@@ -109,9 +111,11 @@ static void modal(DgPainter *p,const DgApp *app)
   if(g->pos.winner==DG_RED)snprintf(result,sizeof result,"YOU WIN");
   else if(g->players==2)snprintf(result,sizeof result,"AI WINS");
   else snprintf(result,sizeof result,"%s AI WINS",player_name(g->pos.winner));
-  ui_center(p,x,y+17,w,result,UI_INK,3,2);
+  ui_center(p,x,y+17,w,result,ui_actor_color(g->pos.winner),3,2);
   snprintf(stats,sizeof stats,"TURNS %lu   %s",(unsigned long)g->pos.turns,ui_level_label(g->level));
   ui_center(p,x,y+43,w,stats,UI_MUTED,1,1);
+  const char *level=ui_level_label(g->level);int width=ui_text_width(stats,1,1);
+  ui_text(p,x+(w-width)/2+width-ui_text_width(level,1,1),y+43,level,ui_level_color(g->level),1,1);
   ui_text(p,x+22,y+64,"EXE: NEW GAME",UI_INK,1,1);ui_text(p,x+22,y+81,"EXIT: VIEW BOARD",UI_INK,1,1);
  }
 }
@@ -122,8 +126,9 @@ void ui_game_screen(DgPainter *p,const DgApp *app,const char **labels)
  bool human=dg_current(g)==DG_RED && !app->thinking && !app->animation;
  labels[0]=g->pos.winner || app->thinking || app->animation?"":"RESTART";
  labels[1]=g->undo_valid && !g->pos.winner && human?"UNDO":"";
- labels[3]="RULES";labels[4]="ZOOM";
- labels[5]=g->pos.winner?"NEW":human?(app->selected<DG_NODES?"MOVE":"SELECT"):"";
+ labels[3]=app->thinking || app->animation?"":"RULES";
+ labels[4]=app->thinking || app->animation?"":"ZOOM";
+ labels[5]=app->thinking || app->animation?"":g->pos.winner?"NEW":human?(app->selected<DG_NODES?"MOVE":"SELECT"):"";
  if(app->modal){
   modal(p,app);
   /* Modal keys are EXE/EXIT; inactive gameplay actions have no labels. */

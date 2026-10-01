@@ -1,0 +1,28 @@
+{
+  "baseline_public_commit": "775310a178da07b275af3ecf0817339cbbae19d2",
+  "baseline_local_commit": "d49c5d390c172f2a8edf963765607ce550984b4c",
+  "candidate_tag": "v0.1.0-beta.3",
+  "excluded_fields": [
+    "host_seconds"
+  ],
+  "groups": {
+    "2p": {
+      "cases": 12,
+      "semantic_sha256": "cbd22ec5a89c9354bb591675b5f847c104cb42899a8c877bcfb0df166d7a7ada"
+    },
+    "3p": {
+      "cases": 18,
+      "semantic_sha256": "f6ef54563acb61e6e1810851289efeed1b9958dbf10b4b4227a56761c6f29809"
+    },
+    "3p-control": {
+      "cases": 18,
+      "semantic_sha256": "6f4ebe153530fec5efa86f02f06b29a32b4da9f1b6a3365af48c4c750c284d23"
+    },
+    "3p-followup": {
+      "cases": 1,
+      "semantic_sha256": "9971c49952b100bc42dbd5ff3fefa475db505a8ca0161560acd482e3fe445810"
+    }
+  },
+  "easy_unit_goldens": 720,
+  "fixed_choices_and_paths": 192
+}

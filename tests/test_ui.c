@@ -69,8 +69,9 @@ int main(void)
  app.cursor=moves[0].to;assert(dg_app_key(&app,DGK_EXE));assert(dg_current(&app.archive.game)==DG_GREEN && app.archive.game.undo_valid);
  DgPosition human_move=app.archive.game.pos;assert(!dg_app_cpu(&app,cancel,NULL));assert(memcmp(&human_move,&app.archive.game.pos,sizeof human_move)==0);
  assert(dg_app_cpu(&app,NULL,NULL));assert(app.animation && app.path.length>=2);redraw(&app,&f);
- assert(dg_app_key(&app,DGK_MENU));assert(!app.animation && memcmp(&human_move,&app.archive.game.pos,sizeof human_move)==0 && f.menus==1);
- assert(dg_app_cpu(&app,NULL,NULL));while(app.animation)assert(dg_app_animation(&app));assert(dg_current(&app.archive.game)==DG_RED);
+ DgPosition committed=app.archive.game.pos;
+ assert(dg_app_key(&app,DGK_MENU));assert(!app.animation && memcmp(&committed,&app.archive.game.pos,sizeof committed)==0 && f.menus==1);
+ assert(dg_current(&app.archive.game)==DG_RED);
  assert(dg_app_key(&app,DGK_F2));assert(memcmp(&app.archive.game.pos,&unchanged,sizeof unchanged)==0 && !app.archive.game.undo_valid);
  assert(dg_app_key(&app,DGK_F2));assert(memcmp(&app.archive.game.pos,&unchanged,sizeof unchanged)==0);
  assert(dg_app_key(&app,DGK_EXIT));assert(app.screen==DG_SETUP);app.focus=(uint8_t)dg_entry_row(&app,DG_ENTRY_ASSIST);

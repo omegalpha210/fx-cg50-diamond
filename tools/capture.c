@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+/* Reuse the existing engine-valid tactical builders on host only. */
+#define main dg_capture_fixture_main
+#include "ai_fixtures.c"
+#undef main
 
 static uint16_t pixels[224][396];
 static FILE *samples;
@@ -128,6 +132,65 @@ static void entry_captures(DgApp *app,const char *directory)
  snprintf(app->notice,sizeof app->notice,"DESTINATION OCCUPIED");capture(app,directory,"warning-long");
  app->zoom=1;capture(app,directory,"warning-zoom");
 }
+static void long_ai(DgApp *app,uint8_t actor)
+{
+ game(app,3);app->archive.game=multijump(3);DgGame *g=&app->archive.game;
+ g->level=DG_NORMAL;
+ if(actor==DG_YELLOW){
+  uint8_t reflected[DG_NODES]={0};
+  for(int n=0;n<DG_NODES;n++){
+   int target=dg_coord(-(int)dg_nodes[n].q-(int)dg_nodes[n].r,dg_nodes[n].r);assert(target>=0);
+   uint8_t who=g->pos.board[n];reflected[target]=who==DG_GREEN?DG_YELLOW:who==DG_YELLOW?DG_GREEN:who;
+  }
+  memcpy(g->pos.board,reflected,sizeof reflected);
+ }
+ g->human_slot=2;g->order[0]=actor;g->order[1]=actor==DG_GREEN?DG_YELLOW:DG_GREEN;g->order[2]=DG_RED;g->pos.turn=0;
+ assert(dg_game_valid(g));app->cursor=(uint8_t)dg_coord(0,0);
+}
+static void visual_captures(DgApp *app,const char *directory)
+{
+ char filename[512];snprintf(filename,sizeof filename,"%s/animation-frames.csv",directory);
+ FILE *metadata=fopen(filename,"w");assert(metadata);
+ fprintf(metadata,"scene,rtc_ticks,actor,from,to,hops,segment,phase,committed_turns,logical_actor,animation,path\n");
+ long_ai(app,DG_GREEN);DgGame before=app->archive.game;
+ assert(dg_app_cpu(app,NULL,NULL));DgPath chosen=app->path;assert(chosen.length>=4);
+ unsigned total=(unsigned)(chosen.length-1u)*DG_HOP_TICKS;
+ for(unsigned tick=0;tick<=total;tick+=DG_FRAME_TICKS){
+  if(tick)assert(dg_app_animation_tick(app,tick));
+  assert(app->archive.game.pos.turns==before.pos.turns+1 && !app->thinking);
+  char scene[48];snprintf(scene,sizeof scene,"animation-%03u",tick);capture(app,directory,scene);
+  fprintf(metadata,"%s,%u,%u,%u,%u,%u,%u,%u,%lu,%u,%u,",scene,tick,(unsigned)app->animation_actor,
+   (unsigned)app->pending_move.from,(unsigned)app->pending_move.to,(unsigned)app->pending_move.hops,
+   (unsigned)app->anim_index,(unsigned)app->anim_phase,(unsigned long)app->archive.game.pos.turns,
+   (unsigned)dg_current(&app->archive.game),(unsigned)app->animation);
+  for(unsigned n=0;n<chosen.length;n++)fprintf(metadata,n?":%u":"%u",(unsigned)chosen.node[n]);fprintf(metadata,"\n");
+ }
+ assert(fclose(metadata)==0);capture(app,directory,"green-long-trail");
+ capture(app,directory,"animation-final-trail");
+ app->thinking=1;app->thinking_phase=2;capture(app,directory,"trails-thinking");app->thinking=0;
+ assert(dg_app_cpu(app,NULL,NULL));while(app->animation)assert(dg_app_animation(app));
+ assert(dg_current(&app->archive.game)==DG_RED && app->trails[0].valid && app->trails[1].valid);
+ capture(app,directory,"trails-you");capture(app,directory,"trails-both");
+ app->zoom=1;capture(app,directory,"trails-zoom");app->zoom=0;
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ app->selected=moves[0].from;app->cursor=moves[0].to;dg_app_preview(app);
+ capture(app,directory,"trails-assist");app->cursor=app->selected;dg_app_preview(app);capture(app,directory,"trails-selected");
+ app->zoom=1;capture(app,directory,"trails-assist-zoom");
+ long_ai(app,DG_YELLOW);assert(dg_app_cpu(app,NULL,NULL));assert(app->path.length>=4);
+ while(app->animation)assert(dg_app_animation(app));capture(app,directory,"yellow-long-trail");
+ app->zoom=1;capture(app,directory,"yellow-long-trail-zoom");
+ /* Geometry fixtures: the actual trail primitives, not simulated AI choices. */
+ game(app,3);app->archive.game.level=DG_NORMAL;app->cursor=(uint8_t)dg_coord(-4,0);
+ int center=dg_coord(0,0);
+ for(uint8_t zoom=0;zoom<2;zoom++)for(int direction=0;direction<6;direction++)for(unsigned opposite=0;opposite<2;opposite++){
+  int to=dg_nodes[center].neighbor[direction];assert(to>=0);app->zoom=zoom;
+  app->trails[0]=(DgAiTrail){.valid=1,.player=DG_YELLOW,.path={.length=2,.node={(uint8_t)center,(uint8_t)to}}};
+  app->trails[1]=(DgAiTrail){.valid=1,.player=DG_GREEN,.path={.length=2,.node={(uint8_t)(opposite?to:center),(uint8_t)(opposite?center:to)}}};
+  char scene[48];snprintf(scene,sizeof scene,"shared-%s-d%d-%s",opposite?"opposite":"same",direction,zoom?"zoom":"overview");capture(app,directory,scene);
+ }
+ game(app,2);app->archive.game.pos.turn=1;assert(dg_app_cpu(app,NULL,NULL));while(app->animation)assert(dg_app_animation(app));
+ capture(app,directory,"trails-2p");
+}
 int main(int argc,char **argv)
 {
  const char *directory=argc>1?argv[1]:"docs/screenshots";
@@ -157,7 +220,7 @@ int main(int argc,char **argv)
  dg_app_preview(&app);assert(app.path.length>=3);capture(&app,directory,"multi-jump");
  app.zoom=1;capture(&app,directory,"zoom");app.archive.assist=0;dg_app_preview(&app);capture(&app,directory,"zoom-assist-off");
  app.archive.assist=1;app.zoom=0;app.selected=DG_NONE;app.path.length=0;app.thinking=1;app.archive.game.pos.turn=1;capture(&app,directory,"cpu-thinking");capture(&app,directory,"ai-thinking");
- app.thinking=0;assert(dg_app_cpu(&app,NULL,NULL));app.anim_index=1;capture(&app,directory,"cpu-animation");capture(&app,directory,"ai-animation");
+ app.thinking=0;assert(dg_app_cpu(&app,NULL,NULL));assert(dg_app_animation_tick(&app,6));capture(&app,directory,"cpu-animation");capture(&app,directory,"ai-animation");
  app.animation=0;app.path.length=0;app.modal=DG_MODAL_RESTART;capture(&app,directory,"restart");
  game(&app,2);memset(app.archive.game.pos.board,0,sizeof app.archive.game.pos.board);
  for(int n=0;n<DG_NODES;n++){if(dg_in_camp(n,dg_goal[DG_RED]))app.archive.game.pos.board[n]=DG_RED;
@@ -179,7 +242,7 @@ int main(int argc,char **argv)
  count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));capture(&app,directory,"move-with-undo");
  assert(dg_app_key(&app,DGK_F4));app.rules_scroll=12;capture(&app,directory,"rules-controls");
- entry_captures(&app,directory);readability(&app,directory);
+ entry_captures(&app,directory);readability(&app,directory);visual_captures(&app,directory);
  assert(fclose(samples)==0);printf("%u actual-renderer frames\n",capture_count);
  return EXIT_SUCCESS;
 }

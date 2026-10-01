@@ -47,8 +47,9 @@ packaging does not acquire a different checksum just from the wall clock.
 
 `DgMove` stores endpoints, type and shortest hop count. `dg_find_move()` obtains
 its representative `DgPath` from the same BFS for preview/animation. Search
-branches deduplicate endpoints. Runtime CPU animation is uncommitted until the
-last frame; cancellation discards the pending move and pending RNG.
+branches deduplicate endpoints. Beta.3 CPU search cancellation discards the proposal and RNG. After successful
+search, the final move commits once before time-derived visual replay; skipping
+replay retains committed state. [Details](AI_MOVE_VISUALIZATION.md).
 
 The app uses one native framebuffer. Only actual DOWN/HOLD input resets idle;
 draws, timer wakeups, warnings and search callbacks do not. A single scheduler

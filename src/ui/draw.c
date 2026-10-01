@@ -93,9 +93,9 @@ void ui_ring(DgPainter *p,int x,int y,int radius,uint16_t ink)
 uint16_t ui_piece_color(uint8_t player)
 {return player==DG_RED?PIECE_RED:player==DG_YELLOW?PIECE_YELLOW:PIECE_GREEN;}
 uint16_t ui_actor_color(uint8_t player)
-{return player==DG_YELLOW?UI_GOLD:ui_piece_color(player);}
+{return player==DG_YELLOW?UI_YELLOW_TEXT:player==DG_RED?UI_RED_TEXT:UI_GREEN_TEXT;}
 uint16_t ui_level_color(uint8_t level)
-{return level==DG_EASY?PIECE_GREEN:level==DG_NORMAL?UI_GOLD:PIECE_RED;}
+{return level==DG_EASY?UI_GREEN_TEXT:level==DG_NORMAL?UI_YELLOW_TEXT:UI_RED_TEXT;}
 void ui_piece(DgPainter *p,int x,int y,int radius,uint8_t player,bool human)
 {
  ui_disc(p,x,y,radius,UI_BLACK);ui_disc(p,x,y,radius-1,ui_piece_color(player));

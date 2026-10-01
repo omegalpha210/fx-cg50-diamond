@@ -5,6 +5,7 @@ Before-fill PNGs are baseline renderer outputs, not private reference images.
 A public checkout regenerates current images without reference projects.
 """
 import csv
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -65,6 +66,13 @@ SCENES = [
     "thinking-zoom-3", "zoom-unselected", "selected-overview", "selected-zoom",
     "warning-long", "warning-zoom",
 ]
+VISUAL_SCENES = ["trails-you", "green-long-trail", "yellow-long-trail",
+                 "trails-both", "trails-thinking", "trails-zoom", "trails-assist",
+                 "trails-selected", "trails-assist-zoom", "yellow-long-trail-zoom", "trails-2p"]
+SHARED_SCENES = [f"shared-{kind}-d{direction}-{view}"
+                 for view in ["overview", "zoom"] for direction in range(6)
+                 for kind in ["same", "opposite"]]
+SCENES += VISUAL_SCENES + SHARED_SCENES
 subprocess.run([str(ROOT / "build/host/capture"), "docs/screenshots"], cwd=ROOT, check=True)
 frames = list(CAPTURES.glob("*.ppm"))
 for obsolete in ["settings.png", "level-faces.png"]:
@@ -103,13 +111,56 @@ with Image.open(CAPTURES / "player.png") as frame:
     frame.crop((45, 86, 154, 124)).resize((654, 228), Image.Resampling.NEAREST).save(
         CAPTURES / "player-icons.png")
 POLISH_BEFORE = CAPTURES / "beta1-before"
-if POLISH_BEFORE.exists():
+if POLISH_BEFORE.exists() and (CAPTURES / "beta2-before").exists():
     pairs = [("PLAYER", "player", "player"), ("SETUP", "setup-3p", "setup-3p-resume"),
              ("HUD", "3p-overview", "hud-yellow-3p-normal"),
              ("THINKING", "ai-thinking", "thinking-3"), ("WARNING", "warning", "warning-long")]
     sheet([[(f"{label} / beta.1", POLISH_BEFORE / f"{old}.png"),
-            (f"{label} / beta.2", CAPTURES / f"{new}.png")] for label, old, new in pairs],
+            (f"{label} / beta.2", CAPTURES / "beta2-before" / f"{new}.png")] for label, old, new in pairs],
           CAPTURES / "ui-polish-before-after.png")
+
+with (CAPTURES / "animation-frames.csv").open(newline="") as stream:
+    animation = list(csv.DictReader(stream))
+assert animation and animation[0]["rtc_ticks"] == "0" and animation[-1]["animation"] == "0"
+assert len({row["path"] for row in animation}) == 1
+assert len({row["committed_turns"] for row in animation}) == 1
+animation_cells = [(f"{row['rtc_ticks']} RTC ticks / " +
+                    ("FINAL + TRAIL" if row["animation"] == "0" else
+                     f"hop {int(row['segment']) + 1} / phase {row['phase']}"),
+                    CAPTURES / f"{row['scene']}.png") for row in animation]
+sheet([animation_cells[i:i + 3] for i in range(0, len(animation_cells), 3)],
+      CAPTURES / "animation-contact-sheet.png")
+sheet([[(name, CAPTURES / f"{name}.png") for name in VISUAL_SCENES[i:i + 3]]
+       for i in range(0, len(VISUAL_SCENES), 3)], CAPTURES / "ai-trails-sheet.png")
+sheet([[(name, CAPTURES / f"{name}.png") for name in SHARED_SCENES[i:i + 2]]
+       for i in range(0, len(SHARED_SCENES), 2)], CAPTURES / "shared-lanes-sheet.png")
+sheet([[ ("YELLOW fill / text / NORMAL / trail", CAPTURES / "yellow-long-trail.png"),
+         ("TURN YELLOW / progress / NORMAL", CAPTURES / "hud-yellow-3p-normal.png")],
+       [("NORMAL option / shared semantic gold", CAPTURES / "setup-3p-normal.png"),
+        ("YOU / GREEN / YELLOW trails", CAPTURES / "trails-you.png")],
+       [("Saved NORMAL / same gold", CAPTURES / "setup-3p-resume.png"),
+        ("Result NORMAL / same gold", CAPTURES / "result-normal.png")]],
+      CAPTURES / "yellow-palette-sheet.png")
+# Enlargements are nearest-neighbor crops of actual shared-lane renderer pixels.
+image = Image.new("RGB", (4 * 240, 6 * 226), "#d9dce0")
+draw = ImageDraw.Draw(image)
+for direction in range(6):
+    for column, (view, kind) in enumerate([(v, k) for v in ["overview", "zoom"]
+                                         for k in ["same", "opposite"]]):
+        name = f"shared-{kind}-d{direction}-{view}"
+        with Image.open(CAPTURES / f"{name}.png") as frame:
+            crop = frame.crop((174, 90, 222, 138)).resize((192, 192), Image.Resampling.NEAREST)
+        x, y = column * 240, direction * 226
+        caption(draw, (x + 4, y + 4), f"d{direction} {kind} {view}")
+        image.paste(crop, (x + 20, y + 22))
+image.save(CAPTURES / "shared-lane-details.png")
+(CAPTURES / "capture-manifest.json").write_text(json.dumps({
+    "tag": "v0.1.0-beta.3", "current_renderer_frames": len(frames),
+    "animation_frames": len(animation), "representative_path": animation[0]["path"],
+    "hop_rtc_ticks": 15, "frame_rtc_ticks": 3,
+    "provenance": "common dg_render plus actual dg_app_cpu/dg_app_animation_tick; shared-lane fixtures explicitly synthetic",
+    "hardware_timing": "HARDWARE TEST REQUIRED"
+}, indent=2) + "\n")
 
 PALETTE = {
     "red": (28 * 255 // 31, 3 * 255 // 31, 3 * 255 // 31),

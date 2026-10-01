@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze beta.1 rules, AI profiles/choices, save format and power semantics."""
+"""Freeze algorithms/choices, beta.2 chosen paths, v1 save and power semantics."""
 import argparse
 import csv
 import hashlib
@@ -29,6 +29,11 @@ observed = [[row[i] for i in columns] for row in rows]
 with (BASE / 'ai-choices-beta1.csv').open(newline='') as source:
     expected = list(csv.reader(source))
 assert observed == expected, '192 EASY/NORMAL/HARD choices, RNG, nodes/depth/beam changed'
+paths = subprocess.check_output([str(args.ai_executable.resolve()), "--paths"], text=True)
+assert paths == (BASE / "ai-paths-beta2.csv").read_text(), "192 representative chosen paths/RNG/nodes changed"
+for source in (ROOT / 'src/ui').glob('*.c'):
+    strings = re.findall(r'"([^"\n]*)"', source.read_text())
+    assert not any('HUMAN' in label.upper() for label in strings), f'visible HUMAN string: {source.name}'
 new = (ROOT / 'src/ui/menus.c').read_text().split('lines[]={', 1)[1].split('};', 1)[0]
 assert re.findall(r'"([^"\n]*)"', new) == json.loads((BASE / 'rules.json').read_text()), 'rule strings changed'
-print(f'Freeze PASS: {len(manifest)} byte-identical files; all 192 AI choices/RNG/nodes/depth/beam, topology, paths, undo, v1 save and 21 rule strings preserved')
+print(f'Freeze PASS: {len(manifest)} byte-identical files; all 192 AI choices/RNG/nodes/depth/beam, topology, paths, undo, v1 save and 21 approved rule strings (YOU vocabulary) preserved; 192 representative paths identical')

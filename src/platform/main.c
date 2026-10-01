@@ -38,7 +38,7 @@ static void start_clock(void)
 {
  wakeup=0;
  if(scheduler>=0){timer_start(scheduler);timer_active=true;}
- else rtc_active=rtc_periodic_enable(RTC_16Hz,GINT_CALL(pulse));
+ else rtc_active=rtc_periodic_enable(RTC_64Hz,GINT_CALL(pulse));
 }
 static void stop_clock(void)
 {
@@ -107,6 +107,14 @@ static void cpu_turn(void)
  else if(pending_action)(void)dg_app_key(&app,pending_action);
  pending_action=0;barrier();animation_last=rtc_ticks();draw();
 }
+static bool animation_frame(void)
+{
+ if(!app.animation)return false;
+ uint32_t now=rtc_ticks(),elapsed=now>=animation_last?now-animation_last:DG_RTC_DAY-animation_last+now;
+ bool redraw=dg_app_animation_tick(&app,elapsed);
+ if(!app.animation)barrier();
+ return redraw;
+}
 int main(void)
 {
  /* One framebuffer; the renderer targets the native 396x224 gint VRAM. */
@@ -119,7 +127,8 @@ int main(void)
  else if(loaded==DG_LOAD_INVALID)snprintf(app.notice,sizeof app.notice,"INVALID SAVE - FRESH SETUP");
  else if(loaded==DG_LOAD_IO_ERROR){snprintf(app.notice,sizeof app.notice,"SAVE READ ERROR");app.dirty=1;}
  keydev_set_transform(keydev_std(),(keydev_transform_t){KEYDEV_TR_REPEATS,repeat});
- scheduler=timer_configure(TIMER_ANY,50000,GINT_CALL(pulse));
+ /* Wake at 20 ms for four intermediate frames; power uses elapsed RTC time. */
+ scheduler=timer_configure(TIMER_ANY,20000,GINT_CALL(pulse));
  (void)gint_world_switch(GINT_CALL(read_power,(void *)NULL));start_clock();
  if(scheduler<0 && !rtc_active)snprintf(app.notice,sizeof app.notice,"IDLE TIMER UNAVAILABLE");
  animation_last=rtc_ticks();barrier();draw();
@@ -134,8 +143,7 @@ int main(void)
   bool redraw=false;uint8_t old_screen=app.screen,old_modal=app.modal;uint32_t old_turns=app.archive.game.pos.turns;
   if(key)redraw=dg_app_key(&app,key);
   if(old_screen!=app.screen || old_modal!=app.modal || old_turns!=app.archive.game.pos.turns)barrier();
-  uint32_t now=rtc_ticks(),elapsed=now>=animation_last?now-animation_last:DG_RTC_DAY-animation_last+now;
-  if(app.animation && elapsed>=6){redraw=dg_app_animation(&app);animation_last=now;if(!app.animation)barrier();}
+  redraw=animation_frame() || redraw;
   if(redraw)draw();
  }
 }

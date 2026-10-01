@@ -10,6 +10,7 @@ python3 tools/font_data.py --check
 cmake -S . -B build/host -DDG_HOST=ON -DCMAKE_BUILD_TYPE=Release > build/host-configure.log 2>&1
 cmake --build build/host -j8 > build/host-build.log 2>&1
 ctest --test-dir build/host --output-on-failure | tee build/host-tests.log
+python3 tools/verify_visual_regression.py --ai-executable build/host/ai_strength | tee build/visual-regression.log
 cmake -S . -B build/ubsan -DDG_HOST=ON -DDG_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug > build/ubsan-configure.log 2>&1
 cmake --build build/ubsan -j8 > build/ubsan-build.log 2>&1
 ctest --test-dir build/ubsan --output-on-failure | tee build/ubsan-tests.log

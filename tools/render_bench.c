@@ -48,6 +48,6 @@ int main(void)
  measure(&app,"assist_destinations");app.selected=DG_NONE;app.path.length=0;
  app.archive.game=opening;
  app.archive.game.pos.turn=1;assert(dg_app_cpu(&app,NULL,NULL));
- app.anim_index=1;measure(&app,"cpu_animation");
+ assert(dg_app_animation_tick(&app,6));measure(&app,"cpu_animation");
  return 0;
 }

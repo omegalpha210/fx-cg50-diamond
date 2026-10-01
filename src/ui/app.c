@@ -3,6 +3,8 @@
 #include <string.h>
 static void warning(DgApp *app,const char *text)
 {snprintf(app->notice,sizeof app->notice,"%s",text);}
+static void clear_trails(DgApp *app)
+{memset(app->trails,0,sizeof app->trails);}
 void dg_app_init(DgApp *app,DgHooks hooks,uint32_t seed)
 {
  memset(app,0,sizeof *app);app->hooks=hooks;app->new_rng=seed?seed:1;
@@ -21,12 +23,13 @@ static void setup_from_game(DgApp *app)
 static void enter_game(DgApp *app)
 {
  app->screen=DG_GAME;app->modal=DG_MODAL_NONE;app->thinking=app->animation=0;app->selected=DG_NONE;app->path.length=0;app->zoom=0;
+ clear_trails(app);
  app->cursor=36;for(int n=0;n<DG_NODES;n++)if(app->archive.game.pos.board[n]==DG_RED){app->cursor=(uint8_t)n;break;}
  setup_from_game(app);
 }
 bool dg_app_to_setup(DgApp *app)
 {
- app->thinking=app->animation=0;app->selected=DG_NONE;app->path.length=0;
+ dg_app_skip_animation(app);app->thinking=0;app->modal=DG_MODAL_NONE;app->selected=DG_NONE;app->path.length=0;
  if(!dg_checkpoint(app))return false;
  setup_from_game(app);app->screen=DG_SETUP;app->focus=0;return true;
 }
@@ -49,6 +52,7 @@ static bool new_game(DgApp *app)
 }
 void dg_app_preview(DgApp *app)
 {
+ if(app->animation || app->thinking)return;
  app->path.length=0;
  if(app->screen==DG_GAME && !app->animation && app->selected!=DG_NONE && app->archive.assist)
   (void)dg_find_move(app->archive.game.pos.board,DG_RED,app->selected,app->cursor,NULL,&app->path);
@@ -73,7 +77,7 @@ static uint8_t adjust_level(uint8_t value,int direction)
 bool dg_app_key(DgApp *app,int key)
 {
  if(key==DGK_MENU || key==DGK_OFF){
-  app->thinking=app->animation=0;app->path.length=0;
+  dg_app_skip_animation(app);app->thinking=0;app->path.length=0;
   if(dg_checkpoint(app) && app->hooks.system)app->hooks.system(app->hooks.context,key==DGK_OFF);
   return true;
  }
@@ -115,9 +119,13 @@ bool dg_app_key(DgApp *app,int key)
   return true;
  }
  DgGame *game=&app->archive.game;
+ if(app->thinking || app->animation){
+  if(key==DGK_EXIT){(void)dg_app_to_setup(app);return true;}
+  return false;
+ }
  if(app->modal==DG_MODAL_RESTART){
   if(key==DGK_EXIT)app->modal=DG_MODAL_NONE;
-  else if(key==DGK_EXE){dg_restart(game);app->archive.active=1;app->modal=DG_MODAL_NONE;app->selected=DG_NONE;app->thinking=app->animation=0;app->path.length=0;app->dirty=1;(void)dg_checkpoint(app);}
+  else if(key==DGK_EXE){dg_restart(game);app->archive.active=1;app->modal=DG_MODAL_NONE;app->selected=DG_NONE;app->thinking=app->animation=0;app->path.length=0;clear_trails(app);app->dirty=1;(void)dg_checkpoint(app);}
   return true;
  }
  if(app->modal==DG_MODAL_RESULT){
@@ -135,7 +143,7 @@ bool dg_app_key(DgApp *app,int key)
  if(game->pos.winner){if(key==DGK_F6)(void)new_game(app);return true;}
  if(app->thinking || app->animation)return false;
  if(key==DGK_F1){app->modal=DG_MODAL_RESTART;return true;}
- if(key==DGK_F2){if(dg_undo(game)){app->selected=DG_NONE;app->path.length=0;app->dirty=1;}return true;}
+ if(key==DGK_F2){if(dg_undo(game)){app->selected=DG_NONE;app->path.length=0;clear_trails(app);app->dirty=1;}return true;}
  if(dg_current(game)!=DG_RED)return false;
  if(key>=DGK_UP && key<=DGK_RIGHT){app->cursor=(uint8_t)dg_nodes[app->cursor].nav[key-DGK_UP];dg_app_preview(app);return true;}
  if(key==DGK_EXE || key==DGK_F6){
@@ -145,7 +153,7 @@ bool dg_app_key(DgApp *app,int key)
   }else{
    DgMove move;
    if(!dg_find_move(game->pos.board,DG_RED,app->selected,app->cursor,&move,NULL))warning(app,game->pos.board[app->cursor]?"DESTINATION OCCUPIED":"INVALID MOVE");
-   else if(dg_commit(game,&move))finished(app);
+   else if(dg_commit(game,&move)){clear_trails(app);finished(app);}
   }
   return true;
  }
@@ -158,15 +166,43 @@ bool dg_app_cpu(DgApp *app,DgCancel cancel,void *context)
  bool result=dg_ai_choose(&app->archive.game,0,cancel,context,&app->pending_move,&app->pending_rng,&app->ai_stats);
  app->thinking=0;
  if(!result){if(!app->ai_stats.cancelled)warning(app,"CPU HAS NO MOVE");return false;}
- if(!dg_find_move(app->archive.game.pos.board,dg_current(&app->archive.game),app->pending_move.from,app->pending_move.to,NULL,&app->path)){warning(app,"CPU MOVE REJECTED");return false;}
- app->animation=1;app->anim_index=0;return true;
-}
-bool dg_app_animation(DgApp *app)
-{
- if(!app->animation)return false;
- if(++app->anim_index<app->path.length)return true;
- app->animation=0;
- if(dg_commit(&app->archive.game,&app->pending_move)){app->archive.game.pos.rng=app->pending_rng;finished(app);}
- else warning(app,"CPU MOVE REJECTED");
+ DgGame *game=&app->archive.game;uint8_t actor=dg_current(game);
+ memset(&app->path,0,sizeof app->path);
+ if(!dg_find_move(game->pos.board,actor,app->pending_move.from,app->pending_move.to,NULL,&app->path)
+    || app->path.length<2 || app->path.length>DG_NODES){warning(app,"CPU MOVE REJECTED");return false;}
+ memcpy(app->animation_board,game->pos.board,DG_NODES);
+ /* The engine validates the final move once. No frame touches game or RNG. */
+ if(!dg_commit(game,&app->pending_move)){app->path.length=0;warning(app,"CPU MOVE REJECTED");return false;}
+ game->pos.rng=app->pending_rng;app->dirty=1;app->selected=DG_NONE;
+ app->animation_actor=actor;app->animation_ticks=0;app->anim_index=app->anim_phase=0;app->animation=1;
+ if(game->pos.winner){app->archive.active=0;(void)dg_checkpoint(app);}
  return true;
 }
+void dg_app_skip_animation(DgApp *app)
+{
+ if(!app->animation)return;
+ /* Preserve the other AI's immediately previous path, then append this one. */
+ DgAiTrail *earlier=&app->trails[0],*later=&app->trails[1];
+ if(later->valid && later->player!=app->animation_actor)*earlier=*later;
+ else if(!earlier->valid || earlier->player==app->animation_actor)earlier->valid=0;
+ *later=(DgAiTrail){.valid=app->path.length>=2 && app->path.length<=DG_NODES && app->animation_actor>=DG_YELLOW && app->animation_actor<=DG_GREEN,
+  .player=app->animation_actor,.path=app->path};
+ unsigned last=app->path.length?app->path.length-1u:0;
+ app->animation_ticks=(uint16_t)(last*DG_HOP_TICKS);
+ app->anim_index=(uint8_t)last;app->anim_phase=0;
+ app->animation=0;
+ app->path.length=0;
+ if(app->archive.game.pos.winner)app->modal=DG_MODAL_RESULT;
+}
+bool dg_app_animation_tick(DgApp *app,uint32_t elapsed_ticks)
+{
+ if(!app->animation)return false;
+ uint32_t total=(uint32_t)(app->path.length-1u)*DG_HOP_TICKS;
+ if(elapsed_ticks>=total){dg_app_skip_animation(app);return true;}
+ uint16_t ticks=(uint16_t)(elapsed_ticks/DG_FRAME_TICKS*DG_FRAME_TICKS);
+ if(ticks<=app->animation_ticks)return false;
+ app->animation_ticks=ticks;app->anim_index=(uint8_t)(ticks/DG_HOP_TICKS);
+ app->anim_phase=(uint8_t)((ticks%DG_HOP_TICKS)/DG_FRAME_TICKS);return true;
+}
+bool dg_app_animation(DgApp *app)
+{return dg_app_animation_tick(app,(uint32_t)app->animation_ticks+DG_FRAME_TICKS);}
