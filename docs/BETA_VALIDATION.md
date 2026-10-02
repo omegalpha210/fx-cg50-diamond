@@ -1,4 +1,27 @@
-# Beta.3 validation record
+# Validation record — beta.4
+
+Current integrated milestone: **16/16 strict host and 16/16 full UBSan**, strict
+SH with zero warnings, 16 package checks, 145 actual renderer captures, six
+camp overlays and generated icon comparisons. [Beta.4 audit](BETA4_AUDIT.md)
+records 588 V2 matched/control games (all finish; illegal/crash=0), 60 endgame
+positions per version, five previously stalled seeds, save compatibility and
+physical-source interpretation. [Memory](MEMORY.md) records the SH artifact.
+
+Thirteen topology/platform/storage/trail files remain byte-identical to the
+pre-edit baseline. The 720 V1 EASY goldens remain. New rules and endgame choices
+intentionally supersede the prior UI-only whole-engine hash/choice freeze;
+old measurements remain historical. ASan is **NOT VERIFIED** because the earlier
+Darwin sanitizer runtime hung before main, including a minimal probe.
+
+`bash tools/validate_beta.sh` reruns strict host, full UBSan, 48 V2 smoke games,
+strict SH/package, actual captures, camp/reachability and endgame checks from
+the exact public source. Binary publication is explicitly authorized as an
+experimental beta with hardware tests pending. USB is not claimed fixed.
+
+## Historical beta.3 evidence
+
+The numbers below document the already published beta.3, not the local candidate.
+
 
 Baseline public source `775310a178da07b275af3ecf0817339cbbae19d2`, local `d49c5d3`,
 release v0.1.0-beta.2. Before edits, strict CTest, 720 EASY goldens, 192 fixed

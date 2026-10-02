@@ -52,7 +52,7 @@ static void choices(void)
    DgGame before=game;DgMove move;uint32_t rng;DgAiStats stats;clock_t start=clock();
    CHECK(dg_ai_choose(&game,0u,NULL,NULL,&move,&rng,&stats));
    double elapsed=(double)(clock()-start)/(double)CLOCKS_PER_SEC;
-   CHECK(!memcmp(&before,&game,sizeof game));CHECK(dg_find_move(game.pos.board,dg_current(&game),move.from,move.to,NULL,NULL));
+   CHECK(!memcmp(&before,&game,sizeof game));CHECK(dg_find_move(dg_rules(&game),game.pos.board,dg_current(&game),move.from,move.to,NULL,NULL));
    const char *name=difficulty==0u?"EASY":
 #ifdef DG_STRENGTH_BASELINE
    "HARD";
@@ -76,7 +76,7 @@ static void paths(void)
  for(unsigned mode=0;mode<2;mode++)for(unsigned pos=0;pos<POSITION_COUNT;pos++)for(unsigned l=0;l<3;l++){
   DgGame g=suite[mode][pos];g.level=levels[l];DgMove m;DgPath p={0};uint32_t rng;DgAiStats stats;
   CHECK(dg_ai_choose(&g,0,NULL,NULL,&m,&rng,&stats));
-  CHECK(dg_find_move(g.pos.board,dg_current(&g),m.from,m.to,NULL,&p));
+  CHECK(dg_find_move(dg_rules(&g),g.pos.board,dg_current(&g),m.from,m.to,NULL,&p));
   printf("%uP,%u,%s,%u,%u,%u,%u,%lu,%lu,",(unsigned)g.players,pos,level_name(g.level),(unsigned)m.from,(unsigned)m.to,(unsigned)m.type,(unsigned)m.hops,(unsigned long)rng,(unsigned long)stats.nodes);
   for(unsigned n=0;n<p.length;n++)printf(n?":%u":"%u",(unsigned)p.node[n]);
   puts("");
@@ -102,7 +102,7 @@ static void quality(void)
     selected_time[level]=(double)(clock()-start)/(double)CLOCKS_PER_SEC;
    }
    DgMove legal[DG_MAX_MOVES];int score[DG_MAX_MOVES];
-   size_t count=dg_generate(game.pos.board,dg_current(&game),legal,DG_MAX_MOVES);
+   size_t count=dg_generate(dg_rules(&game),game.pos.board,dg_current(&game),legal,DG_MAX_MOVES);
    CHECK(count>0u && count<=DG_MAX_MOVES);int best=-2000000;uint64_t nodes=0u;clock_t reference_start=clock();
    for(size_t candidate=0u;candidate<count;++candidate){
     DgAiStats stats;CHECK(dg_ai_reference_score(&game,&legal[candidate],&score[candidate],&stats));
@@ -133,7 +133,7 @@ static void play_move(DgGame *game,uint8_t level,uint64_t *nodes)
  game->level=level;DgGame before=*game;DgMove move;uint32_t rng;DgAiStats stats;
  CHECK(dg_ai_choose(game,0u,NULL,NULL,&move,&rng,&stats));
  CHECK(!memcmp(&before,game,sizeof before));
- CHECK(dg_find_move(game->pos.board,dg_current(game),move.from,move.to,NULL,NULL));
+ CHECK(dg_find_move(dg_rules(game),game->pos.board,dg_current(game),move.from,move.to,NULL,NULL));
  CHECK(dg_commit(game,&move));game->pos.rng=rng;CHECK(dg_game_valid(game));
  if(nodes!=NULL)*nodes+=stats.nodes;
 }

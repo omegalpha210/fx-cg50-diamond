@@ -8,8 +8,10 @@ import argparse
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
+ICON_SCALE = 0.92
+ICON_TOP = 1
 
-def icon(selected):
+def icon_artwork(selected):
     image = Image.new("RGB", (92, 64), (255, 255, 255))
     draw = ImageDraw.Draw(image)
     paper = (226, 241, 250) if selected else (246, 249, 251)
@@ -33,8 +35,18 @@ def icon(selected):
         draw.polygon([(x-4, y+3), (x-2, y-6), (x+2, y-6), (x+4, y+3)], fill=color)
         draw.ellipse((x-3, y-8, x+3, y-2), fill=color, outline=(37, 54, 67))
         draw.line((x-1, y-6, x-1, y-4), fill=(255, 255, 255), width=1)
-    # Rows 53..63 are intentionally clear for the OS label area.
     return image
+
+def icon(selected):
+    # One identical affine scale on both axes, centered on the 92px canvas.
+    # The original artwork occupies [3,89) x [2,52). Keep a white top row
+    # and leave rows 47..63 clear; OS label overlap still needs hardware testing.
+    original = icon_artwork(selected)
+    left = (92 - 86 * ICON_SCALE) / 2
+    return original.transform(original.size, Image.Transform.AFFINE,
+        (1 / ICON_SCALE, 0, 3 - left / ICON_SCALE,
+         0, 1 / ICON_SCALE, 2 - ICON_TOP / ICON_SCALE),
+        Image.Resampling.NEAREST, fillcolor="white")
 
 def main():
     parser = argparse.ArgumentParser()

@@ -1,8 +1,31 @@
 # Rule sources and decisions
 
-Read directly on 2026-10-01. Precedence for Korean play: Korea Board Games → Korean Wikipedia → explicit project decisions. Japanese Wikipedia is used only to identify rules that must not be imported. The sources below describe variants; this project does not present its implementation choices as a universal official Korean rulebook.
+Online references were inspected on 2026-10-01; the Korea Board Games article and geometry reference were rechecked on 2026-10-03. Precedence: owner-supplied physical Korean manual → Korea Board Games → Korean Wikipedia → explicit project interpretations. Japanese Wikipedia is used only to identify rules that must not be imported. The sources below describe variants; this project does not present its implementation choices as a universal official Korean rulebook.
 
-## SOURCE-SUPPORTED
+## SOURCE — PHYSICAL KOREAN RULEBOOK
+
+On 2026-10-03 the owner supplied this transcription from the physical Korean
+manual: “이동중에는 상대편의 진영으로 출입은 불가능합니다.” The owner also
+confirmed that the center-facing four-hole row is part of the ten-hole camp.
+This is owner-supplied evidence; no new manual photograph was inspected by the
+agent, and no publisher/edition is inferred.
+
+**SOURCE-SUPPORTED:** opponent-camp entry is forbidden; the four-hole boundary
+row is included. The online Korea Board Games article is not cited as proof of
+this camp restriction.
+
+**PROJECT INTERPRETATION:** each active color's camp territory comprises HOME
+and opposite GOAL. Check the mover's own HOME/GOAL first; shared membership
+permits that mover to land there. Otherwise forbid active opponents' HOME/GOAL.
+This is player-relative permission, never a globally preferred owner color.
+The owner explicitly approved this order after the six shared-corner audit.
+It is not represented as a sentence directly printed in the manual.
+
+Apply the restriction to each jump landing, including intermediate landings.
+The point jumped over needs an adjacent piece; no separate crossing ban is
+inferred. Inactive YELLOW regions remain open in 2P. Goal exit is allowed.
+
+## SOURCE-SUPPORTED ONLINE REFERENCES
 
 1. [Korea Board Games, “고전 게임의 발견: 다이아몬드 게임”](https://www.koreaboardgames.com/magazine/menuDetail?boardCd=contents&postNo=314), Park Ji-won, 2017-08-25.
 
@@ -24,7 +47,7 @@ Consequently, this source does **not** support a disjoint `6 × 10 + 13` partiti
 - RED starts below; YELLOW upper left; GREEN upper right. Goals are opposite their respective homes.
 - The human chooses the first/turn slot. New three-player games randomize only the remaining CPU slots; resume and restart preserve the order.
 - All pieces have the same abilities. A jump crosses one adjacent occupied point and lands on the next empty point in that straight lattice direction; either player's piece can be crossed. Direction can change between jumps. STEP and JUMP cannot be mixed in one turn.
-- Any arm can be entered, including unused and opposing camps. Goal pieces can leave until victory. This unrestricted policy is explicitly a project choice.
+- V1 legacy saves retain their historical unrestricted camp policy. NEW uses the corrected V2 policy above. The rejected proposal to forbid any opponent membership unconditionally would leave only 9/10 reachable goal holes in 2P and 8/10 in 3P; it is not implemented.
 - First player with all ten pieces in their goal wins immediately, including in three-player play. There are no later rankings, captures, forced jumps, invented score, or game turn limit.
 - Jump-state visitation prevents search cycles; it does not create a rule forbidding route retracing. At a repeated landing, every nonmoving piece is unchanged and the moving piece occupies the same point, so the state and future destinations are identical.
 - On 2026-10-01 the user explicitly chose to allow route retracing during a chain but exclude a turn ending back at its source. Thus `(from,to)` must have distinct endpoints. This is a project decision, not a claim that Korean sources forbid retracing; it preserves the requested source-empty move invariant.

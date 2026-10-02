@@ -10,7 +10,7 @@ return turn without importing a Japanese prohibition on retracing paths.
 
 Each player begins with ten equal pieces and aims to move all ten into the camp directly opposite their start. RED starts below and aims upward. GREEN starts upper right and aims lower left. In three-player games, YELLOW starts upper left and aims lower right. Two-player starts are 120° apart; three-player starts are mutually 120° apart.
 
-Two-player setup selects HUMAN or CPU first. Three-player setup selects the human's 1ST, 2ND or 3RD slot; the two CPUs fill the other slots in random order for each new game. Restart retains that order. Resume restores the saved order and current turn. Each CPU seeks its own victory.
+Two-player setup selects YOU or AI first. Three-player setup selects the human's 1ST, 2ND or 3RD slot; the two CPUs fill the other slots in random order for each new game. Restart retains that order. Resume restores the saved order and current turn. Each CPU seeks its own victory.
 
 ## One turn
 
@@ -25,7 +25,31 @@ The engine lists every legal final destination once and keeps a deterministic sh
 
 ## Camps and victory
 
-This project permits movement anywhere on the board under the same STEP/JUMP rules, including unused and opposing camps. Pieces can leave their goal before the game ends. These are project decisions, not a claim about every Korean edition.
+NEW games use V2. For **every landing**, including intermediate jumps:
+
+1. Your HOME or GOAL membership allows entry, including shared boundary corners.
+2. Otherwise, membership in any active opponent's HOME or GOAL forbids entry.
+3. Neutral and inactive-color areas remain open under normal STEP/JUMP rules.
+
+The full four-hole boundary row belongs to each ten-hole camp. Shared holes
+have no global owner: a hole shared by RED GOAL and YELLOW HOME is allowed to
+both RED and YELLOW, and forbidden to GREEN in 3P. In 2P, only RED and GREEN
+are active. Inactive YELLOW camps do not independently forbid entry.
+
+The physical Korean manual supports excluding opponent camps. Giving a mover's
+own membership priority at a shared corner is an explicitly approved project
+interpretation. The earlier unconditional opponent-membership exclusion was
+rejected because it made all ten-hole wins impossible. See [sources](RULE_SOURCES.md).
+
+A jumped-over point is tested only for occupancy; no additional camp-crossing
+restriction is imposed. Cursor navigation remains unrestricted. Goal pieces
+may leave before victory; there is no goal lock. Assist and CPU choices use
+exactly the same engine policy as human moves. Invalid opponent-camp input
+shows the red nonmodal **OPPONENT CAMP** notice.
+
+Existing V1 saves retain unrestricted camp movement until completion or NEW.
+Their RULES screen says LEGACY RULES. RESTART preserves that game's revision;
+NEW always creates V2. No saved board, turn order, difficulty or RNG is migrated.
 
 The first move leaving all ten of a player's pieces in that player's ten-point goal ends the game immediately. Three-player games do not continue for second or third place. Completed boards are frozen for inspection and are not unfinished resumable games.
 
@@ -35,10 +59,9 @@ Assist ON marks all legal final destinations of the selected human piece. It can
 
 | Screen | Controls |
 | --- | --- |
-| PLAYER | Arrows select 2/3 PLAYER; EXE or F6 NEXT; F1 SET; F2 RESUME if an unfinished save is valid; F4 RULES |
-| GAME SETUP | Up/down focus; left/right change clamped options; F6 PLAY starts a new game; EXIT returns to PLAYER |
-| SETTINGS | Left/right set ASSIST ON/OFF; EXIT returns |
-| Gameplay | Arrows navigate; EXE/F6 selects/confirms; EXIT cancels selection or leaves the game; F1 RESTART confirmation; F2 UNDO on a human turn; F4 RULES; F5 overview/zoom |
+| PLAYER | Arrows select 2/3 PLAYER; EXE/F6 NEXT; F1 global RESUME; F4 RULES |
+| GAME SETUP | Optional matching RESUME, NEW GAME, DIFFICULTY, FIRST/YOU, ASSIST last; selectors clamp; EXE/F6 OPEN resumes on RESUME and starts NEW from every other row |
+| Gameplay | Arrows navigate; EXE/F6 selects/confirms; EXIT deselects, then zooms out, then checkpoints to setup; F1 RESTART confirmation; F2 UNDO on a human turn; F4 RULES; F5 overview/zoom |
 | Restart confirmation | EXE YES restarts with the same configuration, CPU order and initial RNG; EXIT NO leaves the game unchanged |
 | Result | EXE NEW GAME; EXIT VIEW BOARD; frozen board F6 NEW, EXIT setup |
 | Everywhere | MENU checkpoints committed state and opens CASIO Main Menu; SHIFT+AC/ON checkpoints before power off |

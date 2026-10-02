@@ -52,7 +52,7 @@ static void cpu_response(DgApp *app)
  CHECK(dg_app_cpu(app,NULL,NULL));CHECK(app->animation && !app->thinking);
  CHECK(app->archive.game.pos.turns==before.turns+1);
  CHECK(!memcmp(before.board,app->animation_board,DG_NODES));
- DgMove valid;CHECK(dg_find_move(before.board,app->animation_actor,
+ DgMove valid;CHECK(dg_find_move(dg_rules(&app->archive.game),before.board,app->animation_actor,
   app->pending_move.from,app->pending_move.to,&valid,NULL));
  CHECK(!memcmp(&valid,&app->pending_move,sizeof valid));
  unsigned ticks=0;while(app->animation){CHECK(dg_app_animation(app));CHECK(++ticks<=DG_NODES*DG_HOP_FRAMES);}
@@ -62,7 +62,7 @@ static void cpu_response(DgApp *app)
 static void human_move(DgApp *app)
 {
  CHECK(dg_current(&app->archive.game)==DG_RED);
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);
  CHECK(count>0);app->cursor=moves[0].from;
  CHECK(dg_app_key(app,DGK_EXE));CHECK(app->selected==moves[0].from);
  app->cursor=moves[0].to;CHECK(dg_app_key(app,DGK_EXE));
@@ -179,7 +179,7 @@ static void near_win(DgApp *app,uint8_t player,int *from,int *to)
  for(int n=0;n<DG_NODES && *from<0;n++)if(dg_in_camp(n,dg_goal[player])){
   for(unsigned d=0;d<6;d++){
    int neighbor=dg_nodes[n].neighbor[d];
-   if(neighbor>=0 && !dg_in_camp(neighbor,dg_goal[player])){*from=neighbor;*to=n;break;}
+   if(neighbor>=0 && !dg_in_camp(neighbor,dg_goal[player]) && dg_landing_allowed(dg_rules(game),player,neighbor)){*from=neighbor;*to=n;break;}
   }
  }
  CHECK(*from>=0 && *to>=0);
@@ -188,7 +188,7 @@ static void near_win(DgApp *app,uint8_t player,int *from,int *to)
  for(uint8_t other=DG_RED;other<=DG_GREEN;other++){
   if(other==player || (other==DG_YELLOW && game->players==2))continue;
   unsigned used=0;
-  for(int n=0;n<DG_NODES && used<DG_PIECES;n++)if(n!=*to && !game->pos.board[n] && !dg_in_camp(n,dg_goal[other])){
+  for(int n=0;n<DG_NODES && used<DG_PIECES;n++)if(n!=*to && !game->pos.board[n] && !dg_in_camp(n,dg_goal[other]) && dg_landing_allowed(dg_rules(game),other,n)){
    game->pos.board[n]=other;used++;
   }
   CHECK(used==DG_PIECES);
@@ -238,7 +238,8 @@ static void test_atomic_visual_system(void)
   app.zoom=1;CHECK(dg_app_key(&app,action==0?DGK_MENU:action==1?DGK_OFF:DGK_EXIT));
   CHECK(!app.animation && !app.thinking && state.saves==saves+1);
   CHECK(!memcmp(&committed,&app.archive.game,sizeof committed));
-  CHECK(!memcmp(&committed,&state.disk.game,sizeof committed));
+  DgGame persistent=committed;dg_history_reset(&persistent);
+  CHECK(!memcmp(&persistent,&state.disk.game,sizeof persistent));
   CHECK(app.trails[1].valid && app.trails[1].path.length>=2);
   if(action==2)CHECK(app.screen==DG_SETUP && !state.systems);
   else CHECK(state.systems==1 && state.last_save<state.last_system);
@@ -317,7 +318,7 @@ static void test_entry_contract(void)
    CHECK(app.level==levels[level] && app.slot==slot && app.archive.assist==assist);
    CHECK(app.archive.game.order[slot]==DG_RED && same_archive(&app.archive,&state.disk));
   }
- /* RESUME restores saved game bytes; current selectors cannot overwrite them. */
+ /* RESUME restores persistent state and clears transient AI history. */
  for(uint8_t players=2;players<=3;players++)for(unsigned open=0;open<2;open++){
   DgApp app;State state;begin(&app,&state,players,1,DG_NORMAL);cpu_response(&app);
   DgGame saved=app.archive.game;CHECK(dg_app_to_setup(&app));
@@ -325,6 +326,7 @@ static void test_entry_contract(void)
   CHECK(dg_app_key(&app,DGK_LEFT));CHECK(app.dirty && !app.archive.assist);
   app.focus=0;uint32_t rng=app.new_rng;unsigned saves=state.saves;
   CHECK(dg_app_key(&app,open?DGK_F6:DGK_EXE) && app.screen==DG_GAME);
+  dg_history_reset(&saved);
   CHECK(!memcmp(&saved,&app.archive.game,sizeof saved) && app.new_rng==rng && state.saves==saves);
   CHECK(app.dirty && !app.archive.assist);CHECK(dg_checkpoint(&app));
   DgApp cold;dg_app_init(&cold,(DgHooks){0},927u);cold.archive=state.disk;cold.players=players==2?3:2;

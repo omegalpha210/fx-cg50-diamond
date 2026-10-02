@@ -1,4 +1,15 @@
-# Difficulty audit
+# Current beta.4 difficulty evidence
+
+V2 matched games: NORMAL/EASY 74:26, HARD/NORMAL 94:6, HARD/EASY 100:0.
+3P mixed wins are EASY 22, NORMAL 50, HARD 72. All 588 matched/control games
+finish with zero illegal moves or crashes. Five old 1,200-ply stalled seeds
+now finish under both new-AI V1 and V2. See [complete beta.4 audit](BETA4_AUDIT.md)
+for metrics, exposure-normalized reversals and evidence limits.
+
+The tables below remain historical measurements; their old stalled outcomes
+and parameters do not describe beta.4's focused endgame policy.
+
+# Historical beta.1 difficulty audit
 
 The final profiles show a practical EASY → NORMAL → HARD strength trend in
 matched host games. The bounded reference is correlated with the production

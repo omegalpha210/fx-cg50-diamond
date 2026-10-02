@@ -36,7 +36,7 @@ def main():
         'package_bytes':PACKAGE.stat().st_size,
         'package_sha256':hashlib.sha256(PACKAGE.read_bytes()).hexdigest(),
         'sections':{k:v for k,v in sections.items() if not k.startswith('.debug')},
-        'ai_workspace_bytes':symbols['_ai']+symbols['_distances_ready'],
+        'ai_workspace_bytes':symbols['_ai']+symbols['_distances_ready']+symbols['_endgame_cache'],
         'ai_transposition_table_bytes':0,
         'controller_bytes':symbols['_app'],
         'ui_pre_move_board_bytes':73,

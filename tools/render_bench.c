@@ -36,7 +36,7 @@ int main(void)
  DgGame opening=app.archive.game,walk=opening;DgMove moves[DG_NODES];size_t most=0;
  for(unsigned ply=0;ply<90 && !walk.pos.winner;ply++){
   if(dg_current(&walk)==DG_RED)for(uint8_t n=0;n<DG_NODES;n++)if(walk.pos.board[n]==DG_RED){
-   size_t count=dg_piece_moves(walk.pos.board,DG_RED,n,moves,DG_NODES);
+   size_t count=dg_piece_moves(dg_rules(&walk),walk.pos.board,DG_RED,n,moves,DG_NODES);
    if(count>most){most=count;app.archive.game=walk;app.selected=n;}
   }
   DgMove move;uint32_t rng;DgAiStats stats;

@@ -1,0 +1,18 @@
+{
+  "public_baseline_commit": "54e63bce22ba41b6a3cc4ef518e5b323c43e5768",
+  "commits_audited": 3,
+  "tree_entries": 683,
+  "unique_blobs": 444,
+  "private_paths": 0,
+  "credentials": 0,
+  "personal_saves": 0,
+  "symlinks": 0,
+  "baseline_compile_inputs": {
+    "include/diamond.h": "c3587dfe31fb48d37b8d3e17b05bbdb873d7bdbb0ca3d9e3133633f54e33b6f7",
+    "include/ai.h": "7c02dcf201cf58532a99c5b59c23cc934b695e9f2444c534a6e0ebd7dfa0728c",
+    "src/core/board.c": "f601327da584c9ac936382fe34371018ac9e9f69c7d46f5b6b87fc32d69b9736",
+    "src/core/engine.c": "00c2ef61b1015565810adac26bad2642bdd2a9e8f4e3851040ec5b8512e0bf85",
+    "src/game/game.c": "7fe514621409015755f7b09268e670cd3050b4a00e8784803ba579371a623186",
+    "src/ai/ai.c": "8f34e01be64344dbc3039c2d3de69ef6c8374f889790bd23d43a1d9f3d5fb371"
+  }
+}

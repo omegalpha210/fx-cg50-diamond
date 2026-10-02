@@ -1,4 +1,4 @@
-# DIAMOND state format, version 1
+# DIAMOND state format, versions 1 and 2
 
 The independent files `DGSTATEA.dat` and `DGSTATEB.dat` contain generations of
 one logical archive, comprising global Assist and at most one unfinished game.
@@ -7,14 +7,14 @@ An inactive archive is a checksummed tombstone that retains Assist and suppresse
 an older unfinished game. Completed boards are never resumable archives.
 
 All integers are explicitly little-endian. No C structure, padding, pointer,
-cursor, zoom, animation, search workspace or status text is serialized.
+cursor, zoom, animation, search workspace, AI recent-turn history or status text is serialized.
 `DG_SAVE_BYTES` is a 256-byte decode limit; actual records use 24, 124 or 208 bytes.
 All lengths are even for safe BFile writes.
 
 | Offset | Bytes | Field |
 | --- | ---: | --- |
 | 0 | 8 | ASCII `DGSAVE01`, unique to DIAMOND |
-| 8 | 2 | Version, unsigned 16-bit, exactly 1 |
+| 8 | 2 | Version, unsigned 16-bit, 1 (legacy) or 2 (corrected rules) |
 | 10 | 2 | Exact total record length |
 | 12 | 4 | Unsigned generation |
 | 16 | 4 | CRC-32/ISO-HDLC, complete record with bytes 16–19 treated as zero |
@@ -26,7 +26,8 @@ All lengths are even for safe BFile writes.
 | 25 | 1 | Stable difficulty ID: Easy 0, Hard 1, Normal 2 |
 | 26 | 1 | Human turn slot, zero based |
 | 27 | 3 | Color turn order; unused 2-player slot is 255 (DG_NONE) |
-| 30 | 2 | Reserved, zero |
+| 30 | 1 | V1: zero; V2: rules revision 2 |
+| 31 | 1 | Reserved, zero |
 | 32 | 4 | Game seed |
 | 36 | 4 | Initial gameplay RNG; restart restores this exact value |
 | 40 | 84 | Current committed position |
@@ -40,7 +41,7 @@ length combination are rejected. Absent undo state is zero initialized in RAM.
 
 Engine validation checks player count, difficulty, human slot, exact active-color
 permutation, ten pieces of each participant, no pieces of absent participants,
-turn index, nonzero RNG/initial RNG, winner consistency and undo validity. The
+turn index, nonzero RNG/initial RNG, winner consistency and undo validity. V2 also validates each occupied node against that color's landing policy; V1 keeps unrestricted occupancy. The
 archive additionally requires an unfinished current position. All reserved
 fields, flags, version, length, magic and checksum are checked before acceptance.
 
@@ -50,6 +51,27 @@ difficulty; no migration rewrites them. The display order EASY/NORMAL/HARD is
 separate from serialized IDs. Synthetic pre-NORMAL archives in `tests/fixtures`
 must decode and re-encode byte for byte. Older add-in builds do not support
 NORMAL archives and will reject ID 2 rather than misinterpret it.
+
+## Rule revision compatibility
+
+NEW always creates V2. Version-1 active archives decode with rules revision 1,
+including boards with pieces in camps now forbidden by V2. Their committed and
+undo boards, order, seed/RNG and difficulty are not migrated. Their next active
+checkpoint remains format 1, and active records re-encode byte for byte.
+RESTART preserves the current game's rule revision; completion or NEW ends the
+legacy game. NEW V2 records use format 2 and byte 30 equal to 2. Inactive
+checkpoints use format 2 with the same 24-byte tombstone layout. Unknown format
+or rules revisions are rejected. Both versions use the same movement engine.
+
+Difficulty IDs remain EASY=0, HARD=1, NORMAL=2. Lengths, CRC, A/B filenames,
+generation ordering and the native write/verify transaction are unchanged.
+Tests cover V1 forbidden-under-V2 boards, exact active re-encoding, V2 cold
+load, mixed-version A/B recovery and transient history exclusion.
+
+Twelve recent committed turns are held only in RAM for bounded AI preferences.
+NEW, RESTART, successful UNDO, decode and RESUME clear that history. The history
+is not part of undo snapshots, does not affect legality, and never causes flash
+writes. Animation trails remain separately transient and unserialized.
 
 ## A/B transaction
 

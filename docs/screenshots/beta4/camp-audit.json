@@ -1,0 +1,942 @@
+{
+  "topology": "checked-in src/core/board.c",
+  "nodes": 73,
+  "camp_sizes": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+  ],
+  "camp_union": 54,
+  "neutral_nodes": 19,
+  "camps": [
+    {
+      "id": 0,
+      "name": "RED GOAL",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        12
+      ],
+      "boundary": [
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "id": 1,
+      "name": "GREEN HOME",
+      "nodes": [
+        12,
+        13,
+        14,
+        15,
+        22,
+        23,
+        24,
+        31,
+        32,
+        39
+      ],
+      "boundary": [
+        12,
+        22,
+        31,
+        39
+      ]
+    },
+    {
+      "id": 2,
+      "name": "YELLOW GOAL",
+      "nodes": [
+        39,
+        46,
+        47,
+        54,
+        55,
+        56,
+        63,
+        64,
+        65,
+        66
+      ],
+      "boundary": [
+        39,
+        46,
+        54,
+        63
+      ]
+    },
+    {
+      "id": 3,
+      "name": "RED HOME",
+      "nodes": [
+        60,
+        61,
+        62,
+        63,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72
+      ],
+      "boundary": [
+        60,
+        61,
+        62,
+        63
+      ]
+    },
+    {
+      "id": 4,
+      "name": "GREEN GOAL",
+      "nodes": [
+        33,
+        40,
+        41,
+        48,
+        49,
+        50,
+        57,
+        58,
+        59,
+        60
+      ],
+      "boundary": [
+        33,
+        41,
+        50,
+        60
+      ]
+    },
+    {
+      "id": 5,
+      "name": "YELLOW HOME",
+      "nodes": [
+        6,
+        7,
+        8,
+        9,
+        16,
+        17,
+        18,
+        25,
+        26,
+        33
+      ],
+      "boundary": [
+        9,
+        18,
+        26,
+        33
+      ]
+    }
+  ],
+  "shared_nodes": [
+    {
+      "id": 9,
+      "q": 0,
+      "r": -3,
+      "camps": [
+        0,
+        5
+      ]
+    },
+    {
+      "id": 12,
+      "q": 3,
+      "r": -3,
+      "camps": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": 33,
+      "q": -3,
+      "r": 0,
+      "camps": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": 39,
+      "q": 3,
+      "r": 0,
+      "camps": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": 60,
+      "q": -3,
+      "r": 3,
+      "camps": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": 63,
+      "q": 0,
+      "r": 3,
+      "camps": [
+        2,
+        3
+      ]
+    }
+  ],
+  "strict_opponent_home_and_goal_experiment": [
+    {
+      "players": 2,
+      "player": "RED",
+      "forbidden_goal_nodes": [
+        12
+      ],
+      "home_nodes_also_opponent": [
+        60
+      ],
+      "reachability_ignoring_occupancy": [
+        {
+          "start": 60,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 61,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 62,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 63,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 67,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 68,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 69,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 70,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 71,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 72,
+          "reachable_goal_count": 9
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "player": "GREEN",
+      "forbidden_goal_nodes": [
+        60
+      ],
+      "home_nodes_also_opponent": [
+        12
+      ],
+      "reachability_ignoring_occupancy": [
+        {
+          "start": 12,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 13,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 14,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 15,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 22,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 23,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 24,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 31,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 32,
+          "reachable_goal_count": 9
+        },
+        {
+          "start": 39,
+          "reachable_goal_count": 9
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": "RED",
+      "forbidden_goal_nodes": [
+        9,
+        12
+      ],
+      "home_nodes_also_opponent": [
+        60,
+        63
+      ],
+      "reachability_ignoring_occupancy": [
+        {
+          "start": 60,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 61,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 62,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 63,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 67,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 68,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 69,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 70,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 71,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 72,
+          "reachable_goal_count": 8
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": "YELLOW",
+      "forbidden_goal_nodes": [
+        39,
+        63
+      ],
+      "home_nodes_also_opponent": [
+        9,
+        33
+      ],
+      "reachability_ignoring_occupancy": [
+        {
+          "start": 6,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 7,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 8,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 9,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 16,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 17,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 18,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 25,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 26,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 33,
+          "reachable_goal_count": 8
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": "GREEN",
+      "forbidden_goal_nodes": [
+        33,
+        60
+      ],
+      "home_nodes_also_opponent": [
+        12,
+        39
+      ],
+      "reachability_ignoring_occupancy": [
+        {
+          "start": 12,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 13,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 14,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 15,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 22,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 23,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 24,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 31,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 32,
+          "reachable_goal_count": 8
+        },
+        {
+          "start": 39,
+          "reachable_goal_count": 8
+        }
+      ]
+    }
+  ],
+  "conclusion": "Rejected strict exclusion blocks victory. Approved V2 uses mover-relative own HOME/GOAL membership first.",
+  "effective_v2_engine_audit": [
+    {
+      "players": 2,
+      "player": 1,
+      "allowed_nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        34,
+        35,
+        36,
+        37,
+        38,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72
+      ],
+      "reachability": [
+        {
+          "start": 60,
+          "reachable_goals": 10
+        },
+        {
+          "start": 61,
+          "reachable_goals": 10
+        },
+        {
+          "start": 62,
+          "reachable_goals": 10
+        },
+        {
+          "start": 63,
+          "reachable_goals": 10
+        },
+        {
+          "start": 67,
+          "reachable_goals": 10
+        },
+        {
+          "start": 68,
+          "reachable_goals": 10
+        },
+        {
+          "start": 69,
+          "reachable_goals": 10
+        },
+        {
+          "start": 70,
+          "reachable_goals": 10
+        },
+        {
+          "start": 71,
+          "reachable_goals": 10
+        },
+        {
+          "start": 72,
+          "reachable_goals": 10
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "player": 3,
+      "allowed_nodes": [
+        6,
+        7,
+        8,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        64,
+        65,
+        66
+      ],
+      "reachability": [
+        {
+          "start": 12,
+          "reachable_goals": 10
+        },
+        {
+          "start": 13,
+          "reachable_goals": 10
+        },
+        {
+          "start": 14,
+          "reachable_goals": 10
+        },
+        {
+          "start": 15,
+          "reachable_goals": 10
+        },
+        {
+          "start": 22,
+          "reachable_goals": 10
+        },
+        {
+          "start": 23,
+          "reachable_goals": 10
+        },
+        {
+          "start": 24,
+          "reachable_goals": 10
+        },
+        {
+          "start": 31,
+          "reachable_goals": 10
+        },
+        {
+          "start": 32,
+          "reachable_goals": 10
+        },
+        {
+          "start": 39,
+          "reachable_goals": 10
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": 1,
+      "allowed_nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        12,
+        19,
+        20,
+        21,
+        27,
+        28,
+        29,
+        30,
+        34,
+        35,
+        36,
+        37,
+        38,
+        42,
+        43,
+        44,
+        45,
+        51,
+        52,
+        53,
+        60,
+        61,
+        62,
+        63,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72
+      ],
+      "reachability": [
+        {
+          "start": 60,
+          "reachable_goals": 10
+        },
+        {
+          "start": 61,
+          "reachable_goals": 10
+        },
+        {
+          "start": 62,
+          "reachable_goals": 10
+        },
+        {
+          "start": 63,
+          "reachable_goals": 10
+        },
+        {
+          "start": 67,
+          "reachable_goals": 10
+        },
+        {
+          "start": 68,
+          "reachable_goals": 10
+        },
+        {
+          "start": 69,
+          "reachable_goals": 10
+        },
+        {
+          "start": 70,
+          "reachable_goals": 10
+        },
+        {
+          "start": 71,
+          "reachable_goals": 10
+        },
+        {
+          "start": 72,
+          "reachable_goals": 10
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": 2,
+      "allowed_nodes": [
+        6,
+        7,
+        8,
+        9,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        63,
+        64,
+        65,
+        66
+      ],
+      "reachability": [
+        {
+          "start": 6,
+          "reachable_goals": 10
+        },
+        {
+          "start": 7,
+          "reachable_goals": 10
+        },
+        {
+          "start": 8,
+          "reachable_goals": 10
+        },
+        {
+          "start": 9,
+          "reachable_goals": 10
+        },
+        {
+          "start": 16,
+          "reachable_goals": 10
+        },
+        {
+          "start": 17,
+          "reachable_goals": 10
+        },
+        {
+          "start": 18,
+          "reachable_goals": 10
+        },
+        {
+          "start": 25,
+          "reachable_goals": 10
+        },
+        {
+          "start": 26,
+          "reachable_goals": 10
+        },
+        {
+          "start": 33,
+          "reachable_goals": 10
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "player": 3,
+      "allowed_nodes": [
+        12,
+        13,
+        14,
+        15,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        57,
+        58,
+        59,
+        60
+      ],
+      "reachability": [
+        {
+          "start": 12,
+          "reachable_goals": 10
+        },
+        {
+          "start": 13,
+          "reachable_goals": 10
+        },
+        {
+          "start": 14,
+          "reachable_goals": 10
+        },
+        {
+          "start": 15,
+          "reachable_goals": 10
+        },
+        {
+          "start": 22,
+          "reachable_goals": 10
+        },
+        {
+          "start": 23,
+          "reachable_goals": 10
+        },
+        {
+          "start": 24,
+          "reachable_goals": 10
+        },
+        {
+          "start": 31,
+          "reachable_goals": 10
+        },
+        {
+          "start": 32,
+          "reachable_goals": 10
+        },
+        {
+          "start": 39,
+          "reachable_goals": 10
+        }
+      ]
+    }
+  ]
+}

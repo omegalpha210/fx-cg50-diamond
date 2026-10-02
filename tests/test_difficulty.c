@@ -74,7 +74,7 @@ static void result_new(void)
   for(int n=0;n<DG_NODES;n++)if(dg_in_camp(n,dg_goal[DG_RED]))game->pos.board[n]=DG_RED;
   for(uint8_t p=DG_YELLOW;p<=DG_GREEN;p++)if(p!=DG_YELLOW || players==3){
    unsigned count=0;
-   for(int n=0;n<DG_NODES && count<DG_PIECES;n++)if(!game->pos.board[n] && !dg_in_camp(n,dg_goal[p])){
+   for(int n=0;n<DG_NODES && count<DG_PIECES;n++)if(!game->pos.board[n] && !dg_in_camp(n,dg_goal[p]) && dg_landing_allowed(dg_rules(game),p,n)){
     game->pos.board[n]=p;count++;
    }
    assert(count==DG_PIECES);

@@ -75,20 +75,28 @@ static void setup(DgPainter *p,const DgApp *app,const char **labels)
 }
 static void rules(DgPainter *p,const DgApp *app)
 {
- /* Text, nine-line viewport and 0..12 scroll offsets are unchanged. */
+ /* Nine-line viewport; movement policy follows the active resume. */
  static const char *const lines[]={
   "73 POINTS. 10 EQUAL PIECES EACH.","2 OR 3 PLAYERS. YOU ARE RED.","FILL YOUR OPPOSITE CAMP TO WIN.",
   "STEP TO AN ADJACENT EMPTY POINT.","OR JUMP ONE ADJACENT PIECE TO","THE EMPTY POINT DIRECTLY BEYOND.",
   "JUMP OWN OR OTHER PLAYER PIECES.","NO CAPTURE. CROSSED PIECES STAY.","CHAIN JUMPS AND CHANGE DIRECTION.",
   "STOP AFTER ANY JUMP. JUMP OPTIONAL.","END ON A DIFFERENT POINT.","DO NOT MIX STEP AND JUMP.",
-  "ALL CAMPS MAY BE ENTERED.","GOAL PIECES MAY LEAVE UNTIL WIN.","ASSIST ON MARKS LEGAL DESTINATIONS.",
+  "OWN HOME / GOAL: ENTRY ALLOWED.","OTHER ACTIVE CAMPS: NO ENTRY.",
+  "SHARED CORNERS: OWN CAMP FIRST.","INACTIVE CAMPS REMAIN OPEN.",
+  "GOAL PIECES MAY LEAVE UNTIL WIN.","ASSIST ON MARKS LEGAL DESTINATIONS.",
   "ARROWS NAVIGATE. EXE CONFIRMS.","EXIT CANCELS / RETURNS TO SETUP.","F1 RESTART. F2 UNDO YOUR TURN.",
   "F5 OVERVIEW / ZOOM.","MENU OPENS CASIO MAIN MENU.","SHIFT + AC/ON SAVES THEN POWERS OFF."
  };
  unsigned count=(unsigned)(sizeof lines/sizeof lines[0]),offset=app->rules_scroll;
  if(offset>count-9)offset=count-9;
- char page[20];snprintf(page,sizeof page,"%u-%u / %u",offset+1,offset+9,count);ui_title(p,"RULES",page);
- for(unsigned i=0;i<9;i++)ui_text(p,9,35+(int)i*17,lines[offset+i],UI_INK,1,1);
+ bool legacy=app->archive.active && app->archive.game.rules_revision==DG_RULES_V1;
+ static const char *const old[]={"LEGACY RULES: ALL CAMPS OPEN.","THIS RESUME KEEPS V1 MOVEMENT.",
+  "NEW GAME USES CAMP RESTRICTIONS.","RESTART KEEPS THIS RULE VERSION."};
+ char page[20];snprintf(page,sizeof page,"%u-%u / %u",offset+1,offset+9,count);ui_title(p,legacy?"LEGACY RULES":"RULES",page);
+ for(unsigned i=0;i<9;i++){
+  unsigned line=offset+i;const char *text=legacy && line>=12 && line<16?old[line-12]:lines[line];
+  ui_text(p,9,35+(int)i*17,text,UI_INK,1,1);
+ }
  ui_rect(p,382,35,3,151,UI_LINE);int thumb=151*9/(int)count;
  ui_rect(p,382,35+(int)offset*(151-thumb)/(int)(count-9),3,thumb,UI_BLUE);
  ui_text(p,9,190,"UP / DOWN: SCROLL",UI_MUTED,1,1);

@@ -56,6 +56,6 @@ int main(void)
  DgGame game;memset(&game,0,sizeof game);game.players=255;game.pos.turn=254;game.pos.rng=1;
  assert(!dg_position_valid(&game,&game.pos,false));assert(dg_current(&game)==DG_EMPTY);assert(!dg_commit(&game,NULL));
  assert(!dg_game_valid(NULL));assert(!dg_position_valid(NULL,NULL,false));assert(dg_current(NULL)==0);assert(!dg_new(NULL,2,0,0,1));assert(!dg_undo(NULL));
- assert(dg_generate(NULL,DG_RED,NULL,0)==0);assert(!dg_find_move(NULL,DG_RED,0,1,NULL,NULL));assert(!dg_apply(NULL,DG_RED,NULL));
+ assert(dg_generate(DG_LEGACY_RULES,NULL,DG_RED,NULL,0)==0);assert(!dg_find_move(DG_LEGACY_RULES,NULL,DG_RED,0,1,NULL,NULL));assert(!dg_apply(DG_LEGACY_RULES,NULL,DG_RED,NULL));
  puts("Power: 48 OS-value/fallback combinations, exact deadlines, no repeated OFF, input priority, restore-once, midnight/fractional ticks and prior malformed-state checks PASS");return 0;
 }

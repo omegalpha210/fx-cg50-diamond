@@ -1,5 +1,7 @@
 #include "ui.h"
 #include "power.h"
+#include "usb_lifecycle.h"
+#include "usb_native.h"
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/drivers/keydev.h>
@@ -10,6 +12,7 @@
 #include <stdio.h>
 static DgApp app;
 static DgPower power_state;
+static UsbLifecycle usb;
 static volatile int wakeup;
 static int scheduler=-1,pending_action;
 static bool timer_active,rtc_active,shift_pending,brightness_saved;
@@ -49,11 +52,16 @@ static void stop_clock(void)
 static void system_action(void *context,bool off)
 {
  (void)context;
- if(!dg_storage_cleanup()){snprintf(app.notice,sizeof app.notice,"STORAGE CLOSE FAILED");return;}
+ if(!usb_handoff_begin(&usb,usb_native_sample()))return;
+ if(!dg_storage_cleanup()){
+  snprintf(app.notice,sizeof app.notice,"STORAGE CLOSE FAILED");
+  usb_handoff_end(&usb,usb_native_sample());return;
+ }
  stop_clock();restore_light();barrier();
  if(off)gint_poweroff(true);else gint_osmenu();
  (void)gint_world_switch(GINT_CALL(read_power,(void *)NULL));
  barrier();start_clock();animation_last=rtc_ticks();
+ usb_handoff_end(&usb,usb_native_sample());
 }
 static int repeat(int key,int duration,int count)
 {(void)duration;if(key!=KEY_UP && key!=KEY_DOWN && key!=KEY_LEFT && key!=KEY_RIGHT)return -1;return count?125000:500000;}
@@ -80,6 +88,20 @@ static void idle(key_event_t e)
  if(flags&DG_POWER_RESTORE)restore_light();
  if(flags&DG_POWER_DIM){saved_brightness=(uint16_t)r61524_get(0x5a1);brightness_saved=true;r61524_set(0x5a1,saved_brightness<0x14?saved_brightness:0x14);}
  if(flags&DG_POWER_OFF)pending_action=DGK_OFF;
+ usb_observe(&usb,usb_native_sample());
+ if(usb.pending)pending_action=DGK_MENU;
+}
+static bool dispatch_key(int key)
+{
+ bool system=key==DGK_MENU || key==DGK_OFF;
+ if(system)(void)usb_take_request(&usb);
+ bool redraw=dg_app_key(&app,key);
+ if(system){
+  /* Include insertions during a failed checkpoint with no OS callback. */
+  (void)usb_handoff_begin(&usb,usb_native_sample());
+  usb_handoff_end(&usb,usb_native_sample());
+ }
+ return redraw;
 }
 /* Main-thread cooperative callback: never computes AI or writes flash in ISR. */
 static bool cancel_search(void *context)
@@ -89,6 +111,7 @@ static bool cancel_search(void *context)
   key_event_t event=keydev_read(keydev_std(),false,NULL);idle(event);
   int key=logical_key(event);
   if(key==DGK_MENU || key==DGK_OFF || key==DGK_EXIT)pending_action=key;
+  if(usb.pending)pending_action=DGK_MENU;
   if(pending_action)return true;
   if(event.type==KEYEV_NONE)break;
  }
@@ -104,7 +127,7 @@ static void cpu_turn(void)
  (void)dg_app_cpu(&app,cancel_search,NULL);
  /* dg_app_cpu cleared thinking already; busy EXIT still bypasses zoom. */
  if(pending_action==DGK_EXIT)(void)dg_app_to_setup(&app);
- else if(pending_action)(void)dg_app_key(&app,pending_action);
+ else if(pending_action)(void)dispatch_key(pending_action);
  pending_action=0;barrier();animation_last=rtc_ticks();draw();
 }
 static bool animation_frame(void)
@@ -130,6 +153,7 @@ int main(void)
  /* Wake at 20 ms for four intermediate frames; power uses elapsed RTC time. */
  scheduler=timer_configure(TIMER_ANY,20000,GINT_CALL(pulse));
  (void)gint_world_switch(GINT_CALL(read_power,(void *)NULL));start_clock();
+ usb_initialize(&usb,usb_native_sample());
  if(scheduler<0 && !rtc_active)snprintf(app.notice,sizeof app.notice,"IDLE TIMER UNAVAILABLE");
  animation_last=rtc_ticks();barrier();draw();
  for(;;){
@@ -141,7 +165,7 @@ int main(void)
   key_event_t event=keydev_read(keydev_std(),true,(timer_active || rtc_active)?&wakeup:NULL);
   idle(event);int key=logical_key(event);if(pending_action){key=pending_action;pending_action=0;}
   bool redraw=false;uint8_t old_screen=app.screen,old_modal=app.modal;uint32_t old_turns=app.archive.game.pos.turns;
-  if(key)redraw=dg_app_key(&app,key);
+  if(key)redraw=dispatch_key(key);
   if(old_screen!=app.screen || old_modal!=app.modal || old_turns!=app.archive.game.pos.turns)barrier();
   redraw=animation_frame() || redraw;
   if(redraw)draw();

@@ -7,13 +7,25 @@
 판단하는 GREEN·YELLOW AI와 대결합니다. 동일한 능력의 말 10개를 반대편
 진영으로 먼저 옮기면 승리합니다.
 
-[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3) · [규칙](docs/GAME_RULES.md)
+[English](README.md) · [베타 다운로드](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4) · [규칙](docs/GAME_RULES.md)
+
+**Beta.4: 진영 규칙 교정·기존 저장 호환·엔드게임 AI 개선.** NEW는 실물
+한국어 설명서의 상대 진영 출입 금지를 적용합니다. 공유 경계에서는 이동자의
+자기 HOME/GOAL 소속을 먼저 인정합니다. V1 저장은 기존 규칙 그대로 이어갑니다.
+HARD는 남은 말과 목표 칸의 일대일 배정, 마지막 한두 칸 접근, 불필요한 왕복을
+개선했습니다. 모든 난이도는 즉시 가능한 합법적 승리를 탐색·RNG보다 먼저 선택합니다.
+아이콘은 비율을 유지한 92% 축소로 아래쪽 빈 여백 17px을 확보했습니다.
+
+USB 처리는 **실험적 기능 / HARDWARE TEST REQUIRED**입니다. 이전 로컬 후보의
+네이티브 소스를 유지했으며 USB 클록이 꺼진 상태의 삽입 감지와 OS 연결 창은
+실기 미확인입니다. 명시적으로 승인된 이번 실험적 공개는 USB 해결을 뜻하지 않습니다.
+[Beta.4 검증](docs/BETA4_AUDIT.md) · [USB 감사](docs/USB_LIFECYCLE_AUDIT.md)
 
 ![공통 렌더러의 실제 3P 화면](docs/screenshots/trails-you.png)
 
 **실험적 beta — HARDWARE TEST REQUIRED.** 호스트 테스트와 패키지 검사로
 검증한 버전입니다. 실제 fx-CG50 화면·저장·전원 동작·AI 응답 시간은
-[46개 실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
+[실기 체크리스트](docs/HARDWARE_RETEST.md)로 확인해야 합니다.
 
 - **2P / 3P:** 선공 또는 인간의 차례 위치를 선택합니다.
 - **EASY / NORMAL / HARD:** 번호 행의 초록·읽기 쉬운 금색·빨강 텍스트로 선택합니다.
@@ -36,7 +48,7 @@
 
 ## 설치와 시작
 
-[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3)에서
+[베타 릴리스](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4)에서
 `DIAMOND.g3a`와 `SHA256SUMS.txt`를 받습니다. 아래 명령으로 체크섬을 확인하고,
 USB로 계산기 저장 메모리 최상위에 G3A를 복사한 뒤 안전하게 연결을 해제합니다.
 CASIO Main Menu에서 DIAMOND를 실행합니다.
@@ -79,13 +91,16 @@ TURN의 플레이어와 목표 진행 숫자까지 RED·금색·GREEN으로 표�
 한 턴에는 한 칸 이동 또는 연속 점프를 합니다. 다른 색 말도 넘을 수 있고,
 점프 방향을 바꾸거나 중간에 끝낼 수 있으며 잡기는 없습니다. 경로 되돌아가기는
 허용하지만 최종 위치가 출발점인 턴은 제외합니다. 이동과 점프를 한 턴에 섞지
-않습니다. 진영 출입과 승리 전 목표 진영에서 나오는 이동은 허용합니다.
-왕말·일본식 진영 제한은 없습니다. ASSIST의 경로 표시는 최단 대표 경로 하나입니다.
+않습니다. V2는 자기 HOME/GOAL을 허용한 뒤 다른 활성 상대 진영으로의
+착지를 금지합니다. 중간 점프 착지에도 적용하며 비활성 진영은 허용합니다.
+목표 진영에서 나올 수 있으며 왕말은 없습니다. ASSIST의 경로 표시는 최단 대표 경로 하나입니다.
 
 `DGSTATEA.dat`와 `DGSTATEB.dat`는 하나의 게임을 번갈아 저장합니다.
 커서·탐색·다시 그리기는 플래시에 쓰지 않습니다. 새 게임은 저장 검증 성공 후
-이전 RESUME을 교체합니다. 기존 EASY/HARD 저장 값 0/1은 유지하고 NORMAL은
-같은 v1 형식에서 값 2를 씁니다. [저장 형식](docs/STORAGE_FORMAT.md).
+이전 RESUME을 교체합니다. EASY/HARD/NORMAL 저장 값 0/1/2는 유지합니다.
+V1 저장은 기존 규칙·보드를 유지하고 NEW는 V2를 사용합니다. RESTART는 현재
+규칙 버전을 유지합니다. AI의 최근 12수 기록은 RAM에만 두며 NEW/RESTART/
+UNDO/RESUME 때 지웁니다. [저장 형식](docs/STORAGE_FORMAT.md).
 
 ## 빌드와 검증
 
@@ -112,7 +127,7 @@ ctest --test-dir build/ubsan --output-on-failure
 
 ## 출처와 라이선스
 
-규칙은 [코리아보드게임즈](https://www.koreaboardgames.com/magazine/menuDetail?boardCd=contents&postNo=314)와
+규칙은 사용자가 전사한 실물 한국어 설명서와 [코리아보드게임즈](https://www.koreaboardgames.com/magazine/menuDetail?boardCd=contents&postNo=314)와
 [한국어 위키백과](https://ko.wikipedia.org/wiki/다이아몬드_게임)를 참고해 직접 요약했습니다.
 [출처별 결정](docs/RULE_SOURCES.md)과 [격자 증명](docs/BOARD_GEOMETRY.md)을 확인할 수
 있습니다. 실제 73칸 별 격자의 10칸 진영은 경계 모서리 6칸을 공유하며, 모든

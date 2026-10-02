@@ -1,7 +1,8 @@
-# Actual beta.3 renderer captures
+# Actual renderer captures — local candidate
 
-131 396×224 frames come from `tools/capture.c` calling the same
-`dg_render()` used by the add-in. These are actual host-rendered UI pixels;
+138 396×224 frames come from `tools/capture.c` calling the same
+`dg_render()` used by the add-in, plus two explicitly labelled contrast sheets
+using the same line/arrow/disc primitives. These are actual host-rendered UI pixels;
 Python converts PPM to PNG and assembles sheets/crops without drawing a second UI.
 Captions use the retained gint atlas; enlarged crops use nearest-neighbor pixels.
 [Conventions](../UI_CONVENTIONS.md), [visualization](../AI_MOVE_VISUALIZATION.md) and
@@ -72,3 +73,18 @@ legacy filename aliases containing human remain filenames only.
 Regenerate after a host build with `python3 tools/ui_captures.py`. No reference
 project or private image is required. Static images supplement the controller,
 native-clock and pixel-transition tests; they cannot establish calculator timing.
+
+Current visibility review: [before/after](trail-before-after.png),
+[16 required views](trail-required-views.png), [overview backgrounds](trail-contrast-overview.png),
+[zoom backgrounds](trail-contrast-zoom.png), [icon 1×](icon-before-after-1x.png),
+[icon 8×](icon-before-after-8x.png), [label mock](icon-label-safe-mock.png).
+The new comparison/mock captions use Pillow's bundled default font; the mock
+is not an OS screenshot. `beta3-before/` contains this project's frozen original
+renderer pixels. No other project's reference artwork is published here.
+
+
+Beta.4 adds [rules/legacy/Assist/endgame views](beta4/rules-endgame-sheet.png),
+[six camp overlays](beta4/camp-audit.png) and [actual engine reachability data](beta4/camp-audit.json).
+There are 145 current renderer captures. The [icon comparison](icon-before-after-1x.png)
+shows public beta.3, the preceding local translation, and the uniform 92% version.
+Its label gap remains a mock pending calculator verification.

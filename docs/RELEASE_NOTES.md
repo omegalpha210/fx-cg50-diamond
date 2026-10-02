@@ -1,38 +1,45 @@
-# DIAMOND v0.1.0-beta.3
+# DIAMOND v0.1.0-beta.4
 
-AI move presentation prerelease for CASIO fx-CG50. Game rules, AI policies/
-strength/order/RNG and v1 A/B storage/power semantics are preserved.
+This experimental beta corrects Korean camp-entry rules, preserves old saves,
+focuses HARD endgame play and shrinks the Main Menu icon uniformly.
 
-- Final chosen AI move commits once through the engine, then replays its actual
-  representative path from a 73-byte visual pre-board. Nominal 117.1875ms per
-  hop, four intermediate positions; search shows only existing THINKING dots.
-- 2P retains GREEN's last directional trail; 3P retains both preceding AI paths
-  until your next legal move. Invalid input/cursor/selection/zoom preserve trails.
-  Trimmed one-pixel lines/chevrons protect holes; shared edges use canonical ±1px
-  lanes, including opposite movement. No trail is saved or stored in Undo.
-- MENU/OFF/EXIT skip replay and preserve final committed state. Winning moves
-  checkpoint the inactive tombstone before replay and defer RESULT until its end.
-- All visible HUMAN labels are YOU, including FIRST/slot, saved setup, TURN and
-  help. Internal human/save fields retain their names/IDs.
-- NORMAL and YELLOW actor text/progress/trail share 0xac00; bright YELLOW fill
-  remains 0xfe00. [Palette](UI_COLOR_AUDIT.md), [visual behavior](AI_MOVE_VISUALIZATION.md).
+- NEW uses V2: own HOME/GOAL membership permits each landing, including shared
+  boundary holes; otherwise active opponents' HOME/GOAL forbids entry. All four
+  boundary-row holes count. Inactive YELLOW camps remain open in 2P. The physical
+  manual supports the restriction; shared-corner precedence is a documented
+  project interpretation. The actual 73-node topology is unchanged.
+- V1 saves resume with their original rules, board/order/difficulty/RNG/undo.
+  RESTART keeps that revision; NEW uses V2. A/B transactions and record lengths
+  are unchanged. The new transient AI history is never serialized.
+- Every difficulty takes an immediate legal win before search or RNG. From
+  seven goals, NORMAL/HARD use unique goal assignment and packing; HARD adds
+  two plies within a 24,000-node limit. Bounded history reduces aimless reversal
+  while keeping legitimate rearrangements legal.
+- In 60 fixed positions HARD goal exits fall from 2 to 0; all-level immediate
+  win misses are zero. Five old 1,200-ply stalls now finish with both V1 and V2.
+  All 588 V2 matched/control games finish with zero illegal moves or crashes.
+  2P NORMAL/EASY is 74:26, HARD/NORMAL 94:6, HARD/EASY 100:0; 3P mixed wins are
+  EASY 22, NORMAL 50, HARD 72. These are harness results, not human ratings.
+- Normal/selected icons use identical 92% affine scaling, one clear top row
+  and 17 clear bottom rows. Bright yellow/light-green 2px/3px trails and
+  117.1875ms-per-hop replay remain unchanged.
 
-Strict Release/full UBSan: 12/12; SH warnings zero; all 16 package checks;
-131 actual renderer captures, including a 26-frame five-hop move; 720 EASY goldens,
-192 fixed choices/stats/RNG and 192 chosen paths identical. Forty-eight smoke
-matches and the still-capped follow-up match beta.2, illegal/crashes zero.
-No game/AI/engine/storage/power implementation/interface diff. [Validation](BETA_VALIDATION.md),
-[acceptance](ACCEPTANCE.md), [captures](screenshots/README.md), [memory](MEMORY.md).
+Strict host **16/16**, full UBSan **16/16**, strict SH **zero warnings**, 16 G3A
+package checks, 145 actual renderer frames, camp/reachability and endgame audits.
+AI workspace 9,895 bytes; controller 704 bytes;
+largest own compiler frame 1732 bytes; one framebuffer.
+ASan remains **NOT VERIFIED** because of the previously observed Darwin runtime
+startup failure. Host timing is never calculator timing.
 
-G3A: 89,416 bytes. SHA256:
-`4096f14bda7a500042162a522ba2dc568e9bc2bf4d6fac00504ba157232a7bf2`.
-Assets: DIAMOND.g3a and SHA256SUMS.txt; verify with `shasum -a 256 -c SHA256SUMS.txt`.
-The exact audited public source rebuild matches local artifacts and captures.
-Post-upload download/digest verification is recorded in the GitHub release.
+`DIAMOND.g3a`: **94,668 bytes**. SHA256:
+`2db3242112391659e24901259f1b9c6e8136ec97867dd49ecb449949bb81908a`.
 
-**HARDWARE TEST REQUIRED.** All [46 exact physical checks](HARDWARE_RETEST.md),
-including the original 32 and 14 new animation/trail/color/text items, remain
-pending. Actual hop speed/frames, LCD/Assist contrast, system keys during replay,
-BFile persistence, dim/APO, native AI latency and total stack/heap are unmeasured.
-Host seconds are not calculator seconds. ASan remains NOT VERIFIED due to the
-previous Darwin runtime initialization hang. This is an experimental prerelease.
+**HARDWARE TEST REQUIRED.** Icon/OS-label overlap, LCD contrast, native AI latency,
+stack/heap high water, storage/power behavior and USB detection/dialog behavior
+remain pending. The prior experimental USB handoff is included unchanged; no USB
+fix is claimed. The owner explicitly authorized this experimental binary release
+with those hardware checks pending.
+
+See [full evidence](BETA4_AUDIT.md), [hardware checklist](HARDWARE_RETEST.md) and
+[publication procedure](PUBLICATION.md). The exact public source is rebuilt before
+upload, and release G3A/checksums are re-downloaded and compared after upload.

@@ -68,7 +68,9 @@ SCENES = [
 ]
 VISUAL_SCENES = ["trails-you", "green-long-trail", "yellow-long-trail",
                  "trails-both", "trails-thinking", "trails-zoom", "trails-assist",
-                 "trails-selected", "trails-assist-zoom", "yellow-long-trail-zoom", "trails-2p"]
+                 "trails-selected", "trails-assist-zoom", "yellow-long-trail-zoom", "trails-2p",
+                 "green-long-trail-zoom", "yellow-step-overview", "green-step-overview", "yellow-step-zoom", "green-step-zoom",
+                 "trail-contrast-overview", "trail-contrast-zoom"]
 SHARED_SCENES = [f"shared-{kind}-d{direction}-{view}"
                  for view in ["overview", "zoom"] for direction in range(6)
                  for kind in ["same", "opposite"]]
@@ -155,7 +157,7 @@ for direction in range(6):
         image.paste(crop, (x + 20, y + 22))
 image.save(CAPTURES / "shared-lane-details.png")
 (CAPTURES / "capture-manifest.json").write_text(json.dumps({
-    "tag": "v0.1.0-beta.3", "current_renderer_frames": len(frames),
+    "candidate": "beta.4 experimental; hardware tests pending", "current_renderer_frames": len(frames),
     "animation_frames": len(animation), "representative_path": animation[0]["path"],
     "hop_rtc_ticks": 15, "frame_rtc_ticks": 3,
     "provenance": "common dg_render plus actual dg_app_cpu/dg_app_animation_tick; shared-lane fixtures explicitly synthetic",

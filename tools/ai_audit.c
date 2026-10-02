@@ -26,7 +26,7 @@ static void apply_ai(DgGame *game,uint32_t budget,DgAiStats *stats)
  DgGame before = *game;
  assert(dg_ai_choose(game,budget,NULL,NULL,&move,&rng,stats));
  assert(memcmp(game,&before,sizeof(before)) == 0);
- assert(dg_find_move(game->pos.board,dg_current(game),move.from,move.to,&valid,NULL));
+ assert(dg_find_move(dg_rules(game),game->pos.board,dg_current(game),move.from,move.to,&valid,NULL));
  assert(memcmp(&move,&valid,sizeof(move)) == 0);
  assert(dg_commit(game,&move));
  game->pos.rng = rng;
@@ -84,7 +84,7 @@ static void stress(uint32_t positions,uint32_t budget)
     assert(memcmp(&before,&game,sizeof(game)) == 0);
     uint8_t copied[DG_NODES];
     memcpy(copied,game.pos.board,sizeof(copied));
-    assert(dg_apply(copied,dg_current(&game),&move));
+    assert(dg_apply(dg_rules(&game),copied,dg_current(&game),&move));
     unsigned pieces[4] = {0u,0u,0u,0u};
     for(unsigned n = 0u; n < DG_NODES; ++n) ++pieces[copied[n]];
     assert(pieces[DG_RED] == DG_PIECES && pieces[DG_GREEN] == DG_PIECES);
@@ -92,7 +92,7 @@ static void stress(uint32_t positions,uint32_t budget)
     nodes += stats.nodes;
    }
    DgMove moves[DG_MAX_MOVES];
-   size_t count = dg_generate(game.pos.board,dg_current(&game),moves,DG_MAX_MOVES);
+   size_t count = dg_generate(dg_rules(&game),game.pos.board,dg_current(&game),moves,DG_MAX_MOVES);
    assert(count > 0u && count <= DG_MAX_MOVES);
    assert(dg_commit(&game,&moves[dg_random(&random_state) % count]));
    assert(dg_game_valid(&game));

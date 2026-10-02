@@ -1,0 +1,36 @@
+{
+  "package_bytes": 94668,
+  "package_sha256": "2db3242112391659e24901259f1b9c6e8136ec97867dd49ecb449949bb81908a",
+  "sections": {
+    ".text": 51024,
+    ".gint.blocks": 352,
+    ".gint.drivers": 432,
+    ".rodata": 13976,
+    ".bss": 11632,
+    ".data": 80,
+    ".data.4": 0,
+    ".ilram": 128,
+    ".xyram": 0,
+    ".gint.bss": 112
+  },
+  "ai_workspace_bytes": 9895,
+  "ai_transposition_table_bytes": 0,
+  "controller_bytes": 704,
+  "ui_pre_move_board_bytes": 73,
+  "ui_trail_bytes": 77,
+  "ui_two_trails_bytes": 154,
+  "ui_new_visual_fields_bytes": 231,
+  "save_max_payload_bytes": 208,
+  "save_decoder_limit_bytes": 256,
+  "largest_own_stack_frame": {
+    "file": "src/storage/transaction.c",
+    "line": 42,
+    "function": "dg_storage_save_io",
+    "bytes": 1732,
+    "kind": "static"
+  },
+  "native_framebuffers": 1,
+  "native_framebuffer_pixel_bytes": 177408,
+  "gint_framebuffer_allocation_bytes": 177504,
+  "limitations": "Compiler frame sizes are not total stack high water. gint/OS/libc frames and runtime heap are not fully measured; hardware retest required."
+}

@@ -1,0 +1,15 @@
+{
+  "src/core/board.c": "f601327da584c9ac936382fe34371018ac9e9f69c7d46f5b6b87fc32d69b9736",
+  "src/storage/native.c": "ef203db90ecb20f554ef0f8a3a30117bdf74bb4a9c1e51b4087419bf8663e196",
+  "src/storage/transaction.c": "b70b73865c762ceda75e73fa92fa038c16a746e68f03358598d503304ce13bd1",
+  "include/storage.h": "f4a3b24768abf4237185458b996ea7a2e7afeb2efc0df70c014e2a2b9b37949b",
+  "include/power.h": "be0cad36994551a305554e34c95cc489efab16114490f95d3141b44b929abd31",
+  "src/platform/power.c": "26d8f6dd1d3c0d0dba794e88f8cd1812695efdeee129ec92da0c4a917c2447ea",
+  "src/platform/power_syscalls.S": "f9e97c7c2a430f13e1ab61d9e21fbb4102d9191ae86180c7834f485b09fe4999",
+  "src/platform/main.c": "a528437966fcc87ffa7e765a5d1f28fd6d7367f60f6811d374800a89a44880a4",
+  "include/usb_lifecycle.h": "ed7da63fc48b0a30a25febbdb79ae40c0a349884f2d0fb42c9fe45616e69f023",
+  "include/usb_native.h": "8c0b91630cf7c168d7b4db1f65f71eeb1bc311f763775575b3d5a198c521ee83",
+  "src/ui/trails.c": "2297d279f46473bf2a9726e50ab9fcb0f9b6e973cdbe2c34e970c831df044572",
+  "src/ui/draw.h": "ea7e14c0d656dcafe275ea95ff113d10bf10e328b3da1098c303838c62086ab7",
+  "include/ui.h": "455f64b83ffd6ae9da0b309ce317d8a2b5303f62ed03af584b41ee7a0ea4a763"
+}

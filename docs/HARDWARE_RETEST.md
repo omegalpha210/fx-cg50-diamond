@@ -1,7 +1,7 @@
-# fx-CG50 beta.3 hardware retest
+# fx-CG50 beta.4 hardware retest
 
-All 46 items are **PENDING — HARDWARE TEST REQUIRED**. Record calculator/OS
-version, beta.3 package SHA256, system dim/APO settings and observed results.
+The original 46 items and additions below are **PENDING — HARDWARE TEST REQUIRED**. Record calculator/OS
+version, beta.4 package SHA256, system dim/APO settings and observed results.
 Host pixels, transition tests and native API doubles cannot establish hardware behavior.
 
 | # | Check | Acceptance |
@@ -55,3 +55,41 @@ Host pixels, transition tests and native API doubles cannot establish hardware b
 
 Do not mark a row passed without physical evidence. Forced power interruption,
 BFile faults, native timer resources and LCD/PWM behavior need actual observations.
+
+## USB and visual candidate — additional gate
+
+All cases below are **HARDWARE TEST REQUIRED**, without recorded physical results.
+For every USB case, record VBUS detection availability, Main Menu return, actual
+Select Connection Mode appearance and recurrence of the original white flash
+separately. Repeat successful cases; one success is insufficient to claim a fix.
+
+- Insert while idle, in setup/modal, during gameplay and during each AI profile.
+- Insert during a committed multi-hop replay and confirm saved final board/RNG.
+- Insert while dimmed; combine with MENU and SHIFT+AC/ON; verify one transition.
+- Keep cable attached, unplug and reinsert; verify one request per observed edge.
+- Select USB Flash and verify save files, then test ScreenRecv, ScreenRecv(XP)
+  and Projector availability. Record if reconnection was actually necessary.
+- Check normal/selected Main Menu icon top geometry and label gap after uniform 92% scaling (17px bottom / 1px top white margin).
+- Check bright yellow/light green, 2px overview / 3px zoom, larger arrows in all
+  directions, ±3px shared lanes, and cyan Assist distinction on the LCD.
+
+The owner explicitly authorized an experimental beta.4 binary with physical tests pending. USB is not claimed fixed. See [audit and detector limits](USB_LIFECYCLE_AUDIT.md).
+
+## Beta.4 rules, saves and endgame additions
+
+All remain **PENDING — HARDWARE TEST REQUIRED**.
+
+- NEW 2P/3P: reject opponent-only camp and all four boundary-row landings;
+  show red OPPONENT CAMP with Assist ON/OFF. Own shared HOME/GOAL corners work.
+- Resume old EASY/HARD/NORMAL V1 archives, including formerly unrestricted camp
+  positions; confirm LEGACY RULES, unchanged board/order/difficulty/RNG/Undo.
+- RESTART retains V1; NEW switches to V2. Verify mixed V1/V2 A/B recovery without
+  modifying the newest good copy during a failed save.
+- Reach 7/8/9 goals as every active color at EASY/NORMAL/HARD. Confirm an immediate
+  last-hole win is taken, including GREEN after an opponent vacates its goal.
+- Observe extended HARD endgame search latency and foreground EXIT/MENU/OFF/APO/
+  USB cancellation. Record native time separately from all host CPU timings.
+- Long sessions: watch goal shuffling, legitimate rearrangements, repeated moves,
+  stack/heap high water and input responsiveness. No automatic turn cap applies.
+- Confirm top geometry is visible and the OS's actual DIAMOND label no longer
+  touches normal/selected artwork. Compare the 92% icon on the real Main Menu.

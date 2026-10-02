@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "../src/ui/draw.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -18,9 +19,9 @@ static void raster(void *context,int x,int y,int w,int h,uint16_t ink)
  (void)context;assert(x>=0 && y>=0 && x+w<=396 && y+h<=224 && w>0 && h>0);
  for(int row=y;row<y+h;row++)for(int col=x;col<x+w;col++)pixels[row][col]=ink;
 }
-static void capture(const DgApp *app,const char *directory,const char *name)
+static void write_pixels(const char *directory,const char *name)
 {
- DgCanvas canvas={NULL,raster};dg_render(app,&canvas);char path[512];
+ char path[512];
  int count=snprintf(path,sizeof path,"%s/%s.ppm",directory,name);assert(count>0 && (size_t)count<sizeof path);
  FILE *file=fopen(path,"wb");assert(file);fprintf(file,"P6\n396 224\n255\n");
  for(int row=0;row<224;row++)for(int col=0;col<396;col++){
@@ -29,6 +30,37 @@ static void capture(const DgApp *app,const char *directory,const char *name)
   assert(fwrite(rgb,1,3,file)==3);
  }
  capture_count++;assert(fclose(file)==0);printf("%s\n",path);
+}
+static void capture(const DgApp *app,const char *directory,const char *name)
+{DgCanvas canvas={NULL,raster};dg_render(app,&canvas);write_pixels(directory,name);}
+static void contrast_captures(const char *directory)
+{
+ const uint16_t backgrounds[]={UI_PAPER,DG_RGB(31,30,22),DG_RGB(24,30,26),DG_RGB(31,26,26),UI_WHITE,UI_PAPER};
+ const char *background_names[]={"CENTER","YELLOW CAMP","GREEN CAMP","RED CAMP","WHITE HOLE","PIECES"};
+ DgApp app;dg_app_init(&app,(DgHooks){0},1);app.cursor=(uint8_t)dg_coord(0,0);
+ DgCanvas canvas={NULL,raster};DgPainter p={&canvas,0,0,396,224};
+ for(unsigned zoom=0;zoom<2;zoom++){
+  app.zoom=(uint8_t)zoom;ui_rect(&p,0,0,396,224,UI_WHITE);
+  ui_text(&p,5,5,zoom?"ZOOM / PRIMITIVE CONTRAST":"OVERVIEW / PRIMITIVE CONTRAST",UI_INK,1,1);
+  for(unsigned row=0;row<6;row++){
+   int y=40+(int)row*30;ui_rect(&p,0,y-12,396,29,backgrounds[row]);ui_text(&p,5,y-5,background_names[row],UI_INK,1,1);
+   for(unsigned actor=0;actor<2;actor++){
+    int center=dg_coord(0,0),to=dg_nodes[center].neighbor[0];UiTrailSegment s;
+    assert(ui_trail_segment(&app,center,to,0,&s));
+    int x=150+(int)actor*86,dx=x-198,dy=y-114;
+    s.x+=dx;s.tx+=dx;s.ax+=dx;s.bx+=dx;s.cx+=dx;
+    s.y+=dy;s.ty+=dy;s.ay+=dy;s.by+=dy;s.cy+=dy;
+    uint16_t ink=actor?TRAIL_GREEN:TRAIL_YELLOW;
+    ui_trail_line(&p,&s,zoom?3:2,ink);ui_trail_arrow(&p,&s,ink);
+    int radius=zoom?8:5,tx=x+(zoom?32:16);
+    ui_disc(&p,x,y,radius,UI_BLACK);ui_disc(&p,tx,y,radius,UI_BLACK);
+    ui_disc(&p,x,y,radius-1,row==5?(actor?PIECE_GREEN:PIECE_YELLOW):UI_WHITE);
+    ui_disc(&p,tx,y,radius-1,UI_WHITE);
+   }
+   ui_disc(&p,340,y,zoom?7:4,BOARD_CYAN);
+  }
+  write_pixels(directory,zoom?"trail-contrast-zoom":"trail-contrast-overview");
+ }
 }
 static void game(DgApp *app,uint8_t players)
 {
@@ -55,8 +87,8 @@ static void readability(DgApp *app,const char *directory)
  relocate(&app->archive.game,DG_YELLOW,yellow);relocate(&app->archive.game,DG_RED,source);
  relocate(&app->archive.game,DG_GREEN,dg_coord(-1,0));
  assert(dg_game_valid(&app->archive.game));
- assert(dg_find_move(app->archive.game.pos.board,DG_RED,source,cyan,NULL,NULL));
- assert(!dg_find_move(app->archive.game.pos.board,DG_RED,source,empty,NULL,NULL));
+ assert(dg_find_move(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,source,cyan,NULL,NULL));
+ assert(!dg_find_move(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,source,empty,NULL,NULL));
  app->selected=(uint8_t)source;app->cursor=(uint8_t)dg_coord(-3,0);dg_app_preview(app);
  for(uint8_t zoom=0;zoom<2;zoom++){
   app->zoom=zoom;const char *scene=zoom?"piece-readability-zoom":"piece-readability";
@@ -73,7 +105,7 @@ static void result_fixture(DgApp *app,uint8_t players,uint8_t winner,uint8_t lev
  for(uint8_t who=DG_RED;who<=DG_GREEN;who++){
   if(who==winner || (who==DG_YELLOW && players==2))continue;
   unsigned used=0;
-  for(int n=0;n<DG_NODES && used<DG_PIECES;n++)if(!g->pos.board[n] && !dg_in_camp(n,dg_goal[who])){
+  for(int n=0;n<DG_NODES && used<DG_PIECES;n++)if(!g->pos.board[n] && !dg_in_camp(n,dg_goal[who]) && dg_landing_allowed(dg_rules(g),who,n)){
    g->pos.board[n]=who;used++;
   }
   assert(used==DG_PIECES);
@@ -85,6 +117,7 @@ static void result_fixture(DgApp *app,uint8_t players,uint8_t winner,uint8_t lev
 static void goal_fixture(DgApp *app,uint8_t players,uint8_t actor,uint8_t level)
 {
  game(app,players);DgGame *g=&app->archive.game;g->level=level;memset(g->pos.board,0,sizeof g->pos.board);
+ g->rules_revision=DG_RULES_V1; /* Historical color-layout capture. */
  const unsigned counts[4]={0,5,3,4};
  for(uint8_t who=DG_RED;who<=DG_GREEN;who++)if(who!=DG_YELLOW || players==3){
   unsigned used=0;for(int n=0;n<DG_NODES && used<counts[who];n++)if(dg_in_camp(n,dg_goal[who])){assert(!g->pos.board[n]);g->pos.board[n]=who;used++;}
@@ -126,7 +159,7 @@ static void entry_captures(DgApp *app,const char *directory)
   snprintf(name,sizeof name,zoom?"thinking-zoom-%u":"thinking-%u",(unsigned)phase+1);capture(app,directory,name);
  }
  app->thinking=0;app->zoom=1;capture(app,directory,"zoom-unselected");
- game(app,3);DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ game(app,3);DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app->selected=moves[0].from;app->cursor=moves[0].to;app->zoom=1;dg_app_preview(app);capture(app,directory,"selected-zoom");
  app->zoom=0;capture(app,directory,"selected-overview");
  snprintf(app->notice,sizeof app->notice,"DESTINATION OCCUPIED");capture(app,directory,"warning-long");
@@ -149,6 +182,7 @@ static void long_ai(DgApp *app,uint8_t actor)
 }
 static void visual_captures(DgApp *app,const char *directory)
 {
+ contrast_captures(directory);
  char filename[512];snprintf(filename,sizeof filename,"%s/animation-frames.csv",directory);
  FILE *metadata=fopen(filename,"w");assert(metadata);
  fprintf(metadata,"scene,rtc_ticks,actor,from,to,hops,segment,phase,committed_turns,logical_actor,animation,path\n");
@@ -166,13 +200,14 @@ static void visual_captures(DgApp *app,const char *directory)
   for(unsigned n=0;n<chosen.length;n++)fprintf(metadata,n?":%u":"%u",(unsigned)chosen.node[n]);fprintf(metadata,"\n");
  }
  assert(fclose(metadata)==0);capture(app,directory,"green-long-trail");
+ app->zoom=1;capture(app,directory,"green-long-trail-zoom");app->zoom=0;
  capture(app,directory,"animation-final-trail");
  app->thinking=1;app->thinking_phase=2;capture(app,directory,"trails-thinking");app->thinking=0;
  assert(dg_app_cpu(app,NULL,NULL));while(app->animation)assert(dg_app_animation(app));
  assert(dg_current(&app->archive.game)==DG_RED && app->trails[0].valid && app->trails[1].valid);
  capture(app,directory,"trails-you");capture(app,directory,"trails-both");
  app->zoom=1;capture(app,directory,"trails-zoom");app->zoom=0;
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app->selected=moves[0].from;app->cursor=moves[0].to;dg_app_preview(app);
  capture(app,directory,"trails-assist");app->cursor=app->selected;dg_app_preview(app);capture(app,directory,"trails-selected");
  app->zoom=1;capture(app,directory,"trails-assist-zoom");
@@ -182,6 +217,11 @@ static void visual_captures(DgApp *app,const char *directory)
  /* Geometry fixtures: the actual trail primitives, not simulated AI choices. */
  game(app,3);app->archive.game.level=DG_NORMAL;app->cursor=(uint8_t)dg_coord(-4,0);
  int center=dg_coord(0,0);
+ for(uint8_t zoom=0;zoom<2;zoom++)for(uint8_t actor=DG_YELLOW;actor<=DG_GREEN;actor++){
+  app->zoom=zoom;app->trails[0].valid=0;
+  app->trails[1]=(DgAiTrail){.valid=1,.player=actor,.path={.length=2,.node={(uint8_t)center,(uint8_t)dg_nodes[center].neighbor[0]}}};
+  char scene[48];snprintf(scene,sizeof scene,"%s-step-%s",actor==DG_YELLOW?"yellow":"green",zoom?"zoom":"overview");capture(app,directory,scene);
+ }
  for(uint8_t zoom=0;zoom<2;zoom++)for(int direction=0;direction<6;direction++)for(unsigned opposite=0;opposite<2;opposite++){
   int to=dg_nodes[center].neighbor[direction];assert(to>=0);app->zoom=zoom;
   app->trails[0]=(DgAiTrail){.valid=1,.player=DG_YELLOW,.path={.length=2,.node={(uint8_t)center,(uint8_t)to}}};
@@ -190,6 +230,30 @@ static void visual_captures(DgApp *app,const char *directory)
  }
  game(app,2);app->archive.game.pos.turn=1;assert(dg_app_cpu(app,NULL,NULL));while(app->animation)assert(dg_app_animation(app));
  capture(app,directory,"trails-2p");
+}
+static void beta4_captures(DgApp *app,const char *directory)
+{
+ game(app,3);app->screen=DG_RULES;app->rules_scroll=12;capture(app,directory,"rules-v2-camps");
+ app->archive.game.rules_revision=DG_RULES_V1;capture(app,directory,"rules-v1-legacy");
+ game(app,3);relocate(&app->archive.game,DG_RED,42);app->selected=42;app->cursor=41;
+ assert(dg_game_valid(&app->archive.game));dg_app_preview(app);assert(!app->path.length);
+ assert(dg_app_key(app,DGK_EXE));assert(!strcmp(app->notice,"OPPONENT CAMP"));
+ capture(app,directory,"opponent-camp-overview");app->zoom=1;capture(app,directory,"opponent-camp-zoom");
+ game(app,3);app->archive.game.pos.board[9]=0;app->archive.game.pos.board[36]=DG_YELLOW;
+ relocate(&app->archive.game,DG_RED,19);app->selected=19;app->cursor=9;dg_app_preview(app);
+ assert(dg_game_valid(&app->archive.game) && app->path.length==2);capture(app,directory,"shared-red-goal-allowed");
+ game(app,3);DgGame *g=&app->archive.game;assert(dg_new(g,3,DG_HARD,0,1));memset(g->pos.board,0,DG_NODES);
+ for(int n=0;n<DG_NODES;n++)if(dg_in_camp(n,dg_goal[DG_GREEN]) && n!=60)g->pos.board[n]=DG_GREEN;
+ g->pos.board[51]=DG_GREEN;
+ for(uint8_t p=DG_RED;p<=DG_YELLOW;p++){
+  unsigned used=0;
+  for(unsigned pass=0;pass<2 && used<10;pass++)for(int n=0;n<DG_NODES && used<10;n++)
+   if(n!=60 && !g->pos.board[n] && dg_landing_allowed(dg_rules(g),p,n) && !dg_in_camp(n,dg_goal[p]) && (pass || dg_in_camp(n,dg_home[p]))){g->pos.board[n]=p;used++;}
+  assert(used==10);
+ }
+ g->pos.turn=1;assert(dg_game_valid(g));capture(app,directory,"endgame-nine-green");
+ assert(dg_app_cpu(app,NULL,NULL));while(app->animation)assert(dg_app_animation(app));
+ assert(g->pos.winner==DG_GREEN);capture(app,directory,"endgame-green-wins");
 }
 int main(int argc,char **argv)
 {
@@ -210,7 +274,7 @@ int main(int argc,char **argv)
  app.players=2;app.slot=1;app.level=DG_HARD;capture(&app,directory,"setup-2p");
  app.screen=DG_RULES;capture(&app,directory,"rules");
  game(&app,2);capture(&app,directory,"2p-overview");game(&app,3);capture(&app,directory,"3p-overview");
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app.selected=moves[0].from;app.cursor=app.selected;capture(&app,directory,"piece-selection");
  app.cursor=moves[0].to;dg_app_preview(&app);capture(&app,directory,"assist-on");
  app.archive.assist=0;dg_app_preview(&app);capture(&app,directory,"assist-off");
@@ -233,16 +297,17 @@ int main(int argc,char **argv)
  result_fixture(&app,3,DG_YELLOW,DG_EASY);capture(&app,directory,"result-yellow-ai");
  /* Additional acceptance views exercise labels absent from the opening set. */
  game(&app,3);app.screen=DG_PLAYER;capture(&app,directory,"player-resume");
- game(&app,2);count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ game(&app,2);count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));
  app.cursor=moves[0].to;assert(dg_app_key(&app,DGK_EXE));
  assert(dg_app_cpu(&app,NULL,NULL));while(app.animation)assert(dg_app_animation(&app));
  assert(dg_current(&app.archive.game)==DG_RED && app.archive.game.undo_valid);
  capture(&app,directory,"undo-ready");
- count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));capture(&app,directory,"move-with-undo");
  assert(dg_app_key(&app,DGK_F4));app.rules_scroll=12;capture(&app,directory,"rules-controls");
  entry_captures(&app,directory);readability(&app,directory);visual_captures(&app,directory);
+ beta4_captures(&app,directory);
  assert(fclose(samples)==0);printf("%u actual-renderer frames\n",capture_count);
  return EXIT_SUCCESS;
 }

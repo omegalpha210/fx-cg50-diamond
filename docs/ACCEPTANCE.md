@@ -1,57 +1,54 @@
-# Acceptance evidence — beta.3
+# Acceptance evidence — beta.4
 
-[Visualization](AI_MOVE_VISUALIZATION.md), [color inventory](UI_COLOR_AUDIT.md),
-[validation](BETA_VALIDATION.md) and [capture index](screenshots/README.md) describe
-the current implementation. All physical evidence remains HARDWARE TEST REQUIRED.
+[Complete audit](BETA4_AUDIT.md), [validation](BETA_VALIDATION.md),
+[storage specification](STORAGE_FORMAT.md) and [hardware checklist](HARDWARE_RETEST.md)
+record the current milestone. Calculator-only claims remain HARDWARE TEST REQUIRED.
 
-The 15-file source/interface/test hash guard retains engine/game/AI/storage/power.
-The 73-hole star, overlapping camp memberships, move endpoints and no-op rule,
-win condition, EASY/NORMAL/HARD policies, independent 3P MaxN, order, RNG and
-one-decision Undo are unchanged. All 720 EASY goldens, 192 fixed selections/
-stats/RNG and 192 representative path sequences match the pre-edit baseline.
-Existing tactical/legal/cancellation fixtures remain. Forty-eight smoke matches
-and their one capped 1200-ply follow-up match every untimed beta.2 field; illegal
-moves/crashes are zero. The existing capped case stays capped, with no new draw rule.
+V2 uses player-relative own HOME/GOAL precedence on all six shared corners,
+then excludes active opponents' camps at every landing. All HOME/GOAL memberships,
+four-hole boundaries, 50 start-to-all-goal reachability traversals, intermediate
+jump exclusions, legal goal exit, Assist and nonmodal warnings are checked.
+The original 73-node topology and neighbor/navigation tables are byte-identical.
+The independent coordinate oracle compares complete move endpoint sets on 5,000
+reachable V1/V2 boards. Retracing remains allowed; final no-op turns remain excluded.
 
-Storage keeps its original 24/124/208-byte v1 records, 256-byte limit, enum IDs,
-Assist preference, verified replacement, A/B recovery and terminal tombstone.
-Original storage tests, old EASY/HARD exact re-encode, NORMAL cold-load/Undo/
-Restart/order tests and save/close-failure safety remain. Visual history is not saved.
+V1 active archives preserve board/order/difficulty/RNG/undo and exact active
+re-encoding. NEW uses V2; RESTART retains its game's revision. Both formats use
+one movement engine and the original A/B transaction. Version, revision, CRC,
+length, fault injection, interrupted-write recovery and mixed-version recovery
+are covered. Trail and 12-turn AI histories remain transient and never serialized.
 
-Search cancellation leaves old committed state. Successful CPU choice now commits
-exactly once before its first visual frame. Tests compare the entire committed
-game, representative path, ending RNG and stats to the unanimated engine result
-through every 3-tick frame. MENU/OFF/EXIT skip replay and save final state; winning
-commit checkpoints the inactive tombstone immediately and defers RESULT until
-replay ends. Native midnight/threshold/APO tests prove frame work does not reset
-idle or allocate a timer. Unchanged power thresholds/settings and OS handoff
-ordering are tested, including finite save/close-failure behavior.
+All-level immediate wins, GREEN's newly vacated last goal, 60 matched synthetic
+endgames, an independent assignment oracle, color rotation, 20 progress/reversal
+fixtures and 578 legal rearrangements are checked. HARD's 60-case V2 audit has
+zero goal exits and one assignment regression, versus beta.3's two/two.
+All five historical 1,200-ply stalls finish with the new AI under V1 and V2.
+All 588 V2 matched/control games finish, with zero illegal moves or crashes.
+Reported improvements are harness evidence, not human ratings or optimal play.
 
-2P retains GREEN; 3P retains both actual AI paths through the second search and
-YOU's cursor/selection/zoom/Assist/invalid input. Legal YOU commit, NEW, confirmed
-RESTART, successful UNDO and every RESUME clear them. Each AI keeps only one path.
-The shared entry-row mapping, clamps, NEW/RESUME semantics, F1 global resume and
-normal EXIT deselect→overview→setup matrix remain tested. Busy keys are gated;
-MENU/OFF/EXIT retain foreground handling.
+CPU moves commit once before the unchanged representative-path replay. The
+73-byte pre-board, transient paths, system-request skip/checkpoint behavior,
+post-replay RESULT, 15-tick hop cadence and 40-tick THINKING cadence remain tested.
+No visual work consumes RNG, changes search or resets idle. Trail geometry,
+colors, native USB/power code and the save transaction are protected by a
+13-file byte-preservation manifest. The old whole-engine UI-only freeze is
+explicitly superseded by this authorized rules/AI milestone; historical files
+are retained instead of rewriting their measured results. The 720 V1 EASY
+opening/midgame choice/RNG/evaluation goldens still pass.
 
-Renderer tests check all directed STEP/JUMP edges, all lane signs, both scales,
-normalized trimming/heads, every hole against actual arrow pixels, canonical
-reverse-edge lane stability and both visible colors in 48 dual-lane cases.
-Full renderer comparisons preserve hole interiors, cursor marks and HUD pixels.
-Existing exact softkeys, font/glyph masks, panel bounds, profile/AI icons, fills,
-Assist, warnings, rule scrolling and modals remain covered. YOU replaces visible
-HUMAN; internal human symbols/save fields are unchanged. All NORMAL/YELLOW text
-and trail use 0xac00; YELLOW fill remains 0xfe00.
+PLAYER/SETUP entry behavior, clamps, F1 RESUME, F1 restart, F2 one-decision undo,
+F5 zoom and normal versus busy EXIT behavior remain covered. Goal/cursor/hole
+and HUD geometry, bright yellow/light-green trails, 2px/3px lines, shared lanes,
+arrow clearance and cyan Assist retain their actual-pixel tests.
 
-131 current common-renderer captures include every requested view, all shared
-directions in both scales, and all 26 actual frames of a five-hop chosen move.
-Long fixtures are synthetic engine-valid boards; shared-lane routes are explicit
-geometry fixtures. Screenshots are host pixels, not LCD photos or native timing.
-Strict Release/UBSan, SH warnings, package bytes and memory results are in
-[BETA_VALIDATION.md](BETA_VALIDATION.md) and [MEMORY.md](MEMORY.md).
-The exact public candidate repeats the checks and matches local binary/captures;
-uploaded assets are re-downloaded and compared. [Publication policy](PUBLICATION.md).
+145 common-renderer captures include seven new rules/Assist/endgame views and
+the existing 26-frame five-hop historical V1 route. Six new camp overlays show
+exact IDs and shared boundaries. Normal/selected icon bounds match after one
+uniform 92% affine scale; native/8× and label-mock comparisons are generated.
+Actual OS-label overlap remains unverified on hardware.
 
-All [46 hardware checks](HARDWARE_RETEST.md), including the original 32 and new
-14 move/trail/color/text checks, remain PENDING. No host test measures native
-latency, timer cadence, BFile faults, dim/APO, physical input or total stack/heap.
+Strict host and UBSan, clean SH zero-warning build, package checks, memory audit
+and a rebuild of the exact public source precede upload. Release G3A/checksums
+must be downloaded again and compared byte for byte. ASan is NOT VERIFIED.
+USB remains experimental, with calculator connection detection/dialog behavior
+pending; the owner explicitly authorized beta.4 binary publication in that state.

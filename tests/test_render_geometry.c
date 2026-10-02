@@ -171,8 +171,8 @@ static void board_fill(DgApp *app)
  int source=dg_coord(-2,0),middle=dg_coord(-1,0),destination=dg_coord(0,0),empty=dg_coord(2,1);
  relocate(&app->archive.game,DG_RED,source);relocate(&app->archive.game,DG_GREEN,middle);
  assert(dg_game_valid(&app->archive.game));
- assert(dg_find_move(app->archive.game.pos.board,DG_RED,source,destination,NULL,NULL));
- assert(!dg_find_move(app->archive.game.pos.board,DG_RED,source,empty,NULL,NULL));
+ assert(dg_find_move(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,source,destination,NULL,NULL));
+ assert(!dg_find_move(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,source,empty,NULL,NULL));
  for(uint8_t zoom=0;zoom<2;zoom++){
   app->zoom=zoom;app->cursor=(uint8_t)empty;app->selected=DG_NONE;
   app->path.length=0;app->archive.assist=1;render(app);int radius=zoom?7:4,x,y;
@@ -335,6 +335,7 @@ static void goal_colors(DgApp *app)
  for(uint8_t players=2;players<=3;players++){
   assert(dg_new(&app->archive.game,players,DG_NORMAL,0,123456));
   DgGame *g=&app->archive.game;memset(g->pos.board,0,sizeof g->pos.board);
+  g->rules_revision=DG_RULES_V1; /* Preserve the historical color-layout fixture. */
   const unsigned counts[4]={0,5,3,4};
   for(uint8_t who=DG_RED;who<=DG_GREEN;who++)if(who!=DG_YELLOW || players==3){
    unsigned used=0;for(int n=0;n<DG_NODES && used<counts[who];n++)if(dg_in_camp(n,dg_goal[who])){assert(!g->pos.board[n]);g->pos.board[n]=who;used++;}
@@ -380,15 +381,15 @@ int main(void)
  }
  assert(dg_new(&app.archive.game,3,DG_NORMAL,1,123456));app.archive.active=1;app.players=2;render(&app);menu_strip(true,false);options(&app);
  app.screen=DG_RULES;
- for(uint8_t offset=0;offset<=12;offset++){
-  app.rules_scroll=offset;render(&app);blank_strip();int thumb=151*9/21,top=35+offset*(151-thumb)/12;
+ for(uint8_t offset=0;offset<=15;offset++){
+  app.rules_scroll=offset;render(&app);blank_strip();int thumb=151*9/24,top=35+offset*(151-thumb)/15;
   for(int y=35;y<186;y++)assert(pixels[y][383]==(y>=top && y<top+thumb?UI_BLUE:UI_LINE));
  }
  assert(dg_new(&app.archive.game,3,DG_EASY,0,123456));app.screen=DG_GAME;app.archive.assist=1;
  board_bounds(&app);board_fill(&app);notices(&app);hud_bounds(&app);overlay_bounds(&app);goal_colors(&app);
  assert(dg_new(&app.archive.game,3,DG_EASY,0,123456));
  /* Existing undo-enabled condition at the end of a full human decision. */
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  assert(dg_commit(&app.archive.game,&moves[0]));
  while(dg_current(&app.archive.game)!=DG_RED){
   assert(dg_app_cpu(&app,NULL,NULL));render(&app);game_strip(false,"",false);

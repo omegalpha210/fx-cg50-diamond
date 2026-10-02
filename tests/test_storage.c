@@ -55,7 +55,7 @@ static DgArchive initial(uint8_t players,uint8_t slot)
 static void advance(DgGame *game)
 {
  DgMove moves[DG_MAX_MOVES];
- size_t count=dg_generate(game->pos.board,dg_current(game),moves,DG_MAX_MOVES);
+ size_t count=dg_generate(dg_rules(game),game->pos.board,dg_current(game),moves,DG_MAX_MOVES);
  CHECK(count>0 && count<=DG_MAX_MOVES);
  unsigned index=dg_random(&game->pos.rng)%(unsigned)count;
  CHECK(dg_commit(game,&moves[index]));
@@ -100,7 +100,7 @@ static void test_codec(void)
  CHECK(!dg_decode(&decoded,bytes,DG_SAVE_BYTES+1));
  CHECK(!dg_decode(NULL,bytes,size));CHECK(!dg_decode(&decoded,NULL,size));
  const size_t offsets[]={0,8,9,10,20,21,22,23,24,25,26,27,28,29,30,31,40,113,114,115};
- const uint8_t values[]={0,2,1,0,2,2,1,1,1,3,2,DG_GREEN,DG_RED,0,1,1,4,2,DG_GREEN,1};
+ const uint8_t values[]={0,3,1,0,2,2,1,1,1,3,2,DG_GREEN,DG_RED,0,1,1,4,2,DG_GREEN,1};
  for(size_t i=0;i<sizeof offsets/sizeof offsets[0];i++)reject_change(bytes,size,offsets[i],values[i]);
  for(size_t offset=32;offset<=36;offset+=4){
   uint8_t changed[DG_SAVE_BYTES];memcpy(changed,bytes,size);memset(changed+offset,0,4);
@@ -133,7 +133,7 @@ static void test_codec(void)
   if(dg_in_camp((int)node,dg_goal[DG_RED]))source.game.pos.board[node]=DG_RED;
  }
  for(unsigned node=0;node<DG_NODES && green<DG_PIECES;node++){
-  if(!source.game.pos.board[node] && !dg_in_camp((int)node,dg_goal[DG_GREEN])){
+  if(!source.game.pos.board[node] && !dg_in_camp((int)node,dg_goal[DG_GREEN]) && dg_landing_allowed(dg_rules(&source.game),DG_GREEN,(int)node)){
    source.game.pos.board[node]=DG_GREEN;green++;
   }
  }
@@ -253,9 +253,33 @@ static void test_native_host(void)
  CHECK(unlink("DGSTATEA.dat")==0);CHECK(unlink("DGSTATEB.dat")==0);
  CHECK(fchdir(cwd)==0);CHECK(close(cwd)==0);CHECK(rmdir(temporary)==0);
 }
+static void test_rule_revisions(void)
+{
+ DgArchive old=initial(3,0),loaded;old.game.rules_revision=DG_RULES_V1;
+ /* This pre-correction placement is forbidden in V2, valid in V1. */
+ CHECK(!old.game.pos.board[40]);old.game.pos.board[72]=DG_EMPTY;old.game.pos.board[40]=DG_RED;
+ CHECK(dg_game_valid(&old.game));DgArchive strict=old;strict.game.rules_revision=DG_RULES_V2;
+ CHECK(!dg_game_valid(&strict.game));
+ uint8_t bytes[DG_SAVE_BYTES],again[DG_SAVE_BYTES];size_t size=dg_encode(&old,bytes,sizeof bytes);
+ CHECK(size==124 && bytes[8]==1 && bytes[30]==0);CHECK(dg_decode(&loaded,bytes,size));
+ CHECK(loaded.game.rules_revision==DG_RULES_V1 && !memcmp(&loaded.game.pos,&old.game.pos,sizeof old.game.pos));
+ CHECK(loaded.game.level==old.game.level && !memcmp(loaded.game.order,old.game.order,3));
+ CHECK(dg_encode(&loaded,again,sizeof again)==size && !memcmp(bytes,again,size));
+ advance(&loaded.game);CHECK(loaded.game.history_count==1);size=dg_encode(&loaded,bytes,sizeof bytes);
+ DgArchive resumed;CHECK(dg_decode(&resumed,bytes,size));CHECK(!resumed.game.history_count && !resumed.game.history_next);
+ CHECK(same(&loaded,&resumed));dg_restart(&resumed.game);CHECK(resumed.game.rules_revision==DG_RULES_V1);
+ CHECK(dg_new(&resumed.game,3,DG_NORMAL,2,71));CHECK(resumed.game.rules_revision==DG_RULES_V2);
+ size=dg_encode(&resumed,bytes,sizeof bytes);CHECK(size==124 && bytes[8]==2 && bytes[30]==DG_RULES_V2);
+ CHECK(dg_decode(&loaded,bytes,size) && loaded.game.rules_revision==DG_RULES_V2);
+ Memory memory;empty(&memory);DgStorageIO io=memory_io(&memory);
+ CHECK(dg_storage_save_io(&old,&io));CHECK(dg_storage_save_io(&resumed,&io));
+ CHECK(dg_storage_load_io(&loaded,&io)==DG_LOAD_OK && loaded.game.rules_revision==DG_RULES_V2);
+ memory.data[memory.last_slot][50]^=1;
+ CHECK(dg_storage_load_io(&loaded,&io)==DG_LOAD_RECOVERED && loaded.game.rules_revision==DG_RULES_V1);
+}
 int main(void)
 {
- test_codec();test_transactions();test_generation_wrap();test_reachable_roundtrips();test_native_host();
+ test_codec();test_transactions();test_generation_wrap();test_reachable_roundtrips();test_native_host();test_rule_revisions();
  printf("storage: %u checks passed; A/B faults, undo, wrap and native host files\n",checks);
  return 0;
 }

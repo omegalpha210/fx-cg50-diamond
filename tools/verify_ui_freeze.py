@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Freeze algorithms/choices, beta.2 chosen paths, v1 save and power semantics."""
+"""Beta.4 preserves topology, USB/power/storage transactions and trail geometry.
+
+The authorized rules/AI milestone supersedes the beta.3 whole-engine freeze.
+Old choice/path manifests remain historical evidence, never silently rewritten.
+V1 movement/save compatibility and V2 legality have dedicated C tests.
+"""
 import argparse
 import csv
 import hashlib
@@ -16,24 +21,15 @@ parser.add_argument('--executable', type=Path, required=True)
 parser.add_argument('--ai-executable', type=Path, required=True)
 parser.add_argument('--records', action='store_true', help='compatibility; rules always checked')
 args = parser.parse_args()
-manifest = json.loads((BASE / 'frozen-engine-sha256.json').read_text())
+manifest = json.loads((BASE / 'preserved-beta4-sha256.json').read_text())
 for name, expected in manifest.items():
     actual = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
     assert actual == expected, f'frozen file changed: {name}'
 golden = subprocess.check_output([str(args.executable.resolve())], text=True)
-assert golden == (BASE / 'engine-golden-beta1.txt').read_text(), 'topology/moves/AI/RNG/undo/save golden changed'
-choices = subprocess.check_output([str(args.ai_executable.resolve()), '--choices'], text=True)
-rows = list(csv.reader(io.StringIO(choices)))
-columns = [i for i, name in enumerate(rows[0]) if name != 'host_seconds']
-observed = [[row[i] for i in columns] for row in rows]
-with (BASE / 'ai-choices-beta1.csv').open(newline='') as source:
-    expected = list(csv.reader(source))
-assert observed == expected, '192 EASY/NORMAL/HARD choices, RNG, nodes/depth/beam changed'
-paths = subprocess.check_output([str(args.ai_executable.resolve()), "--paths"], text=True)
-assert paths == (BASE / "ai-paths-beta2.csv").read_text(), "192 representative chosen paths/RNG/nodes changed"
+assert golden.splitlines()[0] == (BASE / 'engine-golden-beta1.txt').read_text().splitlines()[0], '73-node topology changed'
 for source in (ROOT / 'src/ui').glob('*.c'):
     strings = re.findall(r'"([^"\n]*)"', source.read_text())
     assert not any('HUMAN' in label.upper() for label in strings), f'visible HUMAN string: {source.name}'
 new = (ROOT / 'src/ui/menus.c').read_text().split('lines[]={', 1)[1].split('};', 1)[0]
-assert re.findall(r'"([^"\n]*)"', new) == json.loads((BASE / 'rules.json').read_text()), 'rule strings changed'
-print(f'Freeze PASS: {len(manifest)} byte-identical files; all 192 AI choices/RNG/nodes/depth/beam, topology, paths, undo, v1 save and 21 approved rule strings (YOU vocabulary) preserved; 192 representative paths identical')
+assert re.findall(r'"([^"\n]*)"', new) == json.loads((BASE / 'rules-beta4.json').read_text()), 'V2 rule strings changed'
+print(f'Preservation PASS: {len(manifest)} original files byte-identical; original 73-node topology; V2 rules text; YOU vocabulary. Rules/AI changes explicitly authorized for beta.4.')

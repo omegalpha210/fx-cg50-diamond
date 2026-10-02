@@ -7,6 +7,9 @@
 #define main dg_native_main
 #include "../src/platform/main.c"
 #undef main
+MockUsbCpg mock_usb_cpg;
+MockUsbPower mock_usb_power;
+MockUsbRegisters mock_usb_registers={.SYSCFG={1}};
 
 static unsigned checks;
 #define CHECK(expression) do { ++checks; if(!(expression)) { \
@@ -15,7 +18,7 @@ static unsigned checks;
 
 typedef struct {
  uint32_t now,rtc_step;unsigned thinking_phases;
- bool held[32],cleanup_ok,save_ok,rtc_ok,world;
+ bool held[32],cleanup_ok,save_ok,rtc_ok,world,plug_on_save;
  int brightness,backlight,apo;
  unsigned saves,cleanups,menus,offs,starts,pauses,enables,disables,updates,rectangles,reads,clears;
  unsigned backlight_queries,apo_queries,light_reads,light_writes,rtc_reads;
@@ -98,6 +101,7 @@ int dg_storage_load(DgArchive *archive){(void)archive;return DG_LOAD_ABSENT;}
 bool dg_storage_save(DgArchive *archive)
 {
  ++mock.saves;record('S');
+ if(mock.plug_on_save)mock_usb_registers.INTSTS0.VBSTS=1;
  if(!mock.save_ok)return false;
  uint8_t data[DG_SAVE_BYTES];CHECK(dg_encode(archive,data,sizeof data)>0u);
  ++archive->generation;mock.disk=*archive;return true;
@@ -106,6 +110,9 @@ bool dg_storage_cleanup(void){++mock.cleanups;record('C');return mock.cleanup_ok
 
 static void reset(void)
 {
+ mock_usb_cpg.USBCLKCR.CLKSTP=0;mock_usb_power.MSTPCR2.USB0=0;
+ mock_usb_registers.SYSCFG.SCKE=1;mock_usb_registers.INTSTS0.VBSTS=0;
+ usb_initialize(&usb,0);
  memset(&mock,0,sizeof mock);mock.cleanup_ok=mock.save_ok=mock.rtc_ok=true;
  mock.brightness=0x80;mock.backlight=1;mock.apo=10;
  scheduler=7;pending_action=0;timer_active=rtc_active=shift_pending=brightness_saved=false;
@@ -271,7 +278,7 @@ static void test_wake_once_and_low_brightness(void)
 {
  reset();CHECK(dg_new(&app.archive.game,2u,DG_EASY,0u,3671u));
  app.archive.active=1;app.screen=DG_GAME;app.players=2u;
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);CHECK(count>0u);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);CHECK(count>0u);
  app.selected=moves[0].from;app.cursor=moves[0].to;
  mock.now=30u*128u;idle((key_event_t){0,KEYEV_NONE});
  CHECK(mock.light_reads==1u && mock.light_writes==1u && mock.brightness==0x14);
@@ -389,10 +396,48 @@ static void test_animation_clock_and_skip(void)
  CHECK(dg_app_key(&app,pending_action));CHECK(!app.animation && mock.offs==1 && mock.saves==1);
  CHECK(!memcmp(&committed,&mock.disk.game,sizeof committed));
 }
+static void usb_poll(void)
+{
+ idle((key_event_t){0,KEYEV_NONE});
+ if(pending_action){int key=pending_action;pending_action=0;CHECK(dispatch_key(key));}
+}
+static void test_usb_native(void)
+{
+ for(unsigned scene=0;scene<5;scene++){
+  reset();start_clock();
+  if(scene){game(3,DG_HARD);if(scene==2)CHECK(dg_app_key(&app,DGK_F1));}
+  if(scene==3){cpu_turn();CHECK(app.animation);}
+  if(scene==4){mock.now=30u*128u;idle((key_event_t){0,KEYEV_NONE});CHECK(power_state.dimmed);}
+  DgGame committed=app.archive.game;mock_usb_registers.INTSTS0.VBSTS=1;usb_poll();
+  CHECK(mock.menus==1 && !mock.offs && !app.animation && !app.dirty && timer_active);
+  CHECK(mock.saves==(scene?1u:0u) && !memcmp(&committed,&app.archive.game,sizeof committed));
+  for(unsigned i=0;i<100;i++)usb_poll();
+  CHECK(mock.menus==1 && mock.starts==2 && mock.pauses==1);
+  mock_usb_registers.INTSTS0.VBSTS=0;usb_poll();mock_usb_registers.INTSTS0.VBSTS=1;usb_poll();
+  CHECK(mock.menus==2);
+ }
+ for(unsigned off=0;off<2;off++){
+  reset();game(3,DG_HARD);start_clock();DgGame committed=app.archive.game;
+  mock_usb_registers.INTSTS0.VBSTS=1;
+  if(off)mock.held[KEY_SHIFT]=true;
+  enqueue(off?KEY_ACON:KEY_MENU,KEYEV_DOWN);cpu_turn();
+  CHECK(app.ai_stats.cancelled && mock.menus==1 && !mock.offs && mock.saves==1);
+  CHECK(!memcmp(&committed,&mock.disk.game,sizeof committed));usb_poll();CHECK(mock.menus==1);
+ }
+ for(unsigned failure=0;failure<3;failure++){
+  reset();game(2,DG_NORMAL);start_clock();mock.plug_on_save=true;
+  mock.save_ok=failure!=1;mock.cleanup_ok=failure!=2;
+  CHECK(dispatch_key(DGK_MENU));
+  for(unsigned i=0;i<100;i++)usb_poll();
+  CHECK(mock.saves==1 && mock.menus==(failure?0u:1u) && !mock.offs && timer_active);
+ }
+ puts("USB native: idle/modal/dirty/replay/dim, AI cancel, MENU/OFF races, save-time insertion/failure, closed-handle gate, rearm, one timer PASS");
+}
 int main(void)
 {
  test_shift_and_barrier();test_system_order();test_cpu_keys();test_idle_and_pulse();
  test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();test_thinking_progress();test_animation_clock_and_skip();
+ test_usb_native();
  printf("native shim: %u checks passed; real key/barrier/cancel/system/idle code, no hardware claim\n",checks);
  return 0;
 }

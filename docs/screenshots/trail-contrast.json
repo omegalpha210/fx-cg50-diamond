@@ -1,0 +1,48 @@
+{
+  "rgb565": {
+    "old_yellow": "0xac00",
+    "old_green": "0x0508",
+    "trail_yellow": "0xf5c0",
+    "trail_green": "0x5644",
+    "assist": "0x05da"
+  },
+  "contrast_ratios": {
+    "old_yellow": {
+      "paper": 3.165,
+      "white_hole": 3.536,
+      "yellow_camp": 3.153,
+      "green_camp": 2.889,
+      "red_camp": 2.608
+    },
+    "old_green": {
+      "paper": 3.013,
+      "white_hole": 3.366,
+      "yellow_camp": 3.001,
+      "green_camp": 2.75,
+      "red_camp": 2.482
+    },
+    "trail_yellow": {
+      "paper": 1.568,
+      "white_hole": 1.752,
+      "yellow_camp": 1.562,
+      "green_camp": 1.431,
+      "red_camp": 1.292
+    },
+    "trail_green": {
+      "paper": 1.905,
+      "white_hole": 2.128,
+      "yellow_camp": 1.897,
+      "green_camp": 1.739,
+      "red_camp": 1.57
+    },
+    "assist": {
+      "paper": 2.086,
+      "white_hole": 2.331,
+      "yellow_camp": 2.078,
+      "green_camp": 1.904,
+      "red_camp": 1.719
+    }
+  },
+  "interpretation": "Color luminance only, not a text accessibility pass or LCD visibility measurement. Brighter lines trade luminance contrast for width and chroma; actual captures and hardware review are required.",
+  "hardware": "HARDWARE TEST REQUIRED"
+}

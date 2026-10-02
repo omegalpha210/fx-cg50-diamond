@@ -60,7 +60,7 @@ int main(void)
  assert(dg_app_key(&app,DGK_EXIT));assert(app.modal==DG_MODAL_NONE && memcmp(&original,&app.archive.game,sizeof original)==0);
  assert(dg_app_key(&app,DGK_F1));assert(dg_app_key(&app,DGK_EXE));assert(memcmp(original.order,app.archive.game.order,3)==0 && original.seed==app.archive.game.seed);
  start(&app,2);navigation(&app);redraw(&app,&f);
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
  app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));assert(app.selected==moves[0].from);
  app.cursor=moves[0].to;dg_app_preview(&app);assert(app.path.length>=2);redraw(&app,&f);
  app.archive.assist=0;dg_app_preview(&app);assert(app.path.length==0);redraw(&app,&f);

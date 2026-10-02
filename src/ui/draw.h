@@ -12,7 +12,8 @@ enum {
  /* Original DIAMOND piece / route RGB565 values are deliberately retained. */
  PIECE_RED=DG_RGB(28,3,3),PIECE_YELLOW=DG_RGB(31,24,0),PIECE_GREEN=DG_RGB(0,20,8),
  UI_RED_TEXT=PIECE_RED,UI_GREEN_TEXT=PIECE_GREEN,UI_YELLOW_TEXT=DG_RGB(21,16,0),
- UI_GOLD=UI_YELLOW_TEXT, /* Compatibility alias; one gold text/trail role. */
+ UI_GOLD=UI_YELLOW_TEXT, /* Text compatibility alias. */
+ TRAIL_YELLOW=DG_RGB(30,23,0),TRAIL_GREEN=DG_RGB(10,25,4),
  BOARD_CYAN=DG_RGB(0,23,26),BOARD_BLUE=DG_RGB(0,12,25),BOARD_INK=DG_RGB(3,5,8),
  UI_SOFTKEY_TOP=204,UI_FONT_HEIGHT=11,UI_CARD_X=7,UI_CARD_W=187,UI_CARD_GAP=8,
  UI_BOARD_TOP=26,UI_BOARD_BOTTOM=204
@@ -43,5 +44,7 @@ void ui_thinking(DgPainter *p,const DgApp *app);
 void ui_notice_layout(const DgApp *app,UiNotice *notice);
 bool ui_trail_segment(const DgApp *app,int from,int to,int lane,UiTrailSegment *segment);
 void ui_trails(DgPainter *p,const DgApp *app);
+void ui_trail_line(DgPainter *p,const UiTrailSegment *s,int width,uint16_t ink);
+void ui_trail_arrow(DgPainter *p,const UiTrailSegment *s,uint16_t ink);
 void ui_animation_position(const DgApp *app,int *x,int *y);
 #endif

@@ -2,7 +2,11 @@
 #define DIAMOND_AI_H
 #include "diamond.h"
 typedef bool (*DgCancel)(void *context);
-typedef struct { uint32_t nodes,tt_hits; uint16_t legal_moves; uint8_t depth,beam,cancelled; } DgAiStats;
+typedef struct { uint32_t nodes,tt_hits; uint16_t legal_moves; uint8_t depth,beam,cancelled,endgame,immediate_win; } DgAiStats;
+typedef struct { uint16_t assignment; uint8_t goals,empty,blocked,depth,settled; } DgEndgame;
+#define DG_ENDGAME_GOALS 7
+bool dg_ai_endgame_metrics(DgRules rules,const uint8_t *board,uint8_t player,DgEndgame *metrics);
+size_t dg_ai_endgame_workspace_bytes(void);
 typedef struct { uint32_t node_budget;uint8_t depth,root_width,beam; } DgAiProfile;
 bool dg_ai_profile(uint8_t players,uint8_t level,DgAiProfile *profile);
 #ifdef DG_HOST

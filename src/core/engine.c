@@ -13,11 +13,26 @@ int dg_coord(int q,int r)
 }
 bool dg_in_camp(int node,uint8_t camp)
 {return node>=0 && node<DG_NODES && camp<6 && (((uint8_t)dg_nodes[node].region&(1u<<camp))!=0);}
+bool dg_rules_valid(DgRules rules)
+{return (rules.revision==DG_RULES_V1 || rules.revision==DG_RULES_V2) && (rules.players==2 || rules.players==3);}
+bool dg_landing_allowed(DgRules rules,uint8_t player,int node)
+{
+ if(!dg_rules_valid(rules) || player<DG_RED || player>DG_GREEN || node<0 || node>=DG_NODES ||
+    (rules.players==2 && player==DG_YELLOW))return false;
+ if(rules.revision==DG_RULES_V1)return true;
+ /* Shared corners have player-relative membership, never a global owner. */
+ if(dg_in_camp(node,dg_home[player]) || dg_in_camp(node,dg_goal[player]))return true;
+ for(uint8_t other=DG_RED;other<=DG_GREEN;other++){
+  if(other==player || (rules.players==2 && other==DG_YELLOW))continue;
+  if(dg_in_camp(node,dg_home[other]) || dg_in_camp(node,dg_goal[other]))return false;
+ }
+ return true;
+}
 /* Once the source is vacated, every other stationary piece is unchanged.
    A jump state is therefore determined solely by the current landing node.
    BFS visited-state pruning preserves every reachable endpoint, including
    every intermediate landing, without imposing a route rule. */
-static void reach(const uint8_t *board,int from,int8_t *parent,uint8_t *depth)
+static void reach(DgRules rules,const uint8_t *board,uint8_t player,int from,int8_t *parent,uint8_t *depth)
 {
  uint8_t queue[DG_NODES];int head=0,tail=0;
  memset(parent,-1,DG_NODES);memset(depth,DG_NONE,DG_NODES);
@@ -27,7 +42,7 @@ static void reach(const uint8_t *board,int from,int8_t *parent,uint8_t *depth)
   for(int d=0;d<6;d++){
    int mid=dg_nodes[current].neighbor[d],to=dg_nodes[current].jump[d];
    if(mid<0 || to<0 || mid==from || board[mid]==DG_EMPTY)continue;
-   if(to!=from && board[to]!=DG_EMPTY)continue;
+   if(!dg_landing_allowed(rules,player,to) || (to!=from && board[to]!=DG_EMPTY))continue;
    next[count++]=to;
   }
   /* Deterministic lexicographic shortest path. */
@@ -38,12 +53,12 @@ static void reach(const uint8_t *board,int from,int8_t *parent,uint8_t *depth)
   }
  }
 }
-size_t dg_piece_moves(const uint8_t *board,uint8_t player,uint8_t from,DgMove *out,size_t cap)
+size_t dg_piece_moves(DgRules rules,const uint8_t *board,uint8_t player,uint8_t from,DgMove *out,size_t cap)
 {
- if(!board || player<DG_RED || player>DG_GREEN || from>=DG_NODES || board[from]!=player)return 0;
+ if(!board || !dg_landing_allowed(rules,player,from) || from>=DG_NODES || board[from]!=player)return 0;
  int8_t parent[DG_NODES];uint8_t depth[DG_NODES],step[DG_NODES]={0};
- reach(board,from,parent,depth);
- for(int d=0;d<6;d++){int n=dg_nodes[from].neighbor[d];if(n>=0 && board[n]==DG_EMPTY)step[n]=1;}
+ reach(rules,board,player,from,parent,depth);
+ for(int d=0;d<6;d++){int n=dg_nodes[from].neighbor[d];if(dg_landing_allowed(rules,player,n) && board[n]==DG_EMPTY)step[n]=1;}
  size_t count=0;
  for(int n=0;n<DG_NODES;n++){
   if(n==from || (!step[n] && depth[n]==DG_NONE))continue;
@@ -52,33 +67,33 @@ size_t dg_piece_moves(const uint8_t *board,uint8_t player,uint8_t from,DgMove *o
  }
  return count;
 }
-size_t dg_generate(const uint8_t *board,uint8_t player,DgMove *out,size_t cap)
+size_t dg_generate(DgRules rules,const uint8_t *board,uint8_t player,DgMove *out,size_t cap)
 {
- if(!board || player<DG_RED || player>DG_GREEN)return 0;
+ if(!board || !dg_rules_valid(rules) || player<DG_RED || player>DG_GREEN)return 0;
  size_t count=0;
  for(int n=0;n<DG_NODES;n++)if(board[n]==player){
   size_t used=count<cap?count:cap;
-  count+=dg_piece_moves(board,player,(uint8_t)n,out?out+used:NULL,cap-used);
+  count+=dg_piece_moves(rules,board,player,(uint8_t)n,out?out+used:NULL,cap-used);
  }
  return count;
 }
-bool dg_find_move(const uint8_t *board,uint8_t player,int from,int to,DgMove *move,DgPath *path)
+bool dg_find_move(DgRules rules,const uint8_t *board,uint8_t player,int from,int to,DgMove *move,DgPath *path)
 {
- if(!board || player<DG_RED || player>DG_GREEN || from<0 || from>=DG_NODES || to<0 || to>=DG_NODES || from==to || board[from]!=player || board[to])return false;
+ if(!board || !dg_landing_allowed(rules,player,from) || !dg_landing_allowed(rules,player,to) || from==to || board[from]!=player || board[to])return false;
  for(int d=0;d<6;d++)if(dg_nodes[from].neighbor[d]==to){
   if(move)*move=(DgMove){(uint8_t)from,(uint8_t)to,DG_STEP,1};
   if(path){path->length=2;path->node[0]=(uint8_t)from;path->node[1]=(uint8_t)to;}return true;
  }
- int8_t parent[DG_NODES];uint8_t depth[DG_NODES];reach(board,from,parent,depth);
+ int8_t parent[DG_NODES];uint8_t depth[DG_NODES];reach(rules,board,player,from,parent,depth);
  if(depth[to]==DG_NONE)return false;
  if(move)*move=(DgMove){(uint8_t)from,(uint8_t)to,DG_JUMP,depth[to]};
  if(path){path->length=(uint8_t)(depth[to]+1);int at=to;for(int i=depth[to];i>=0;i--){path->node[i]=(uint8_t)at;at=parent[at];}}
  return true;
 }
-bool dg_apply(uint8_t *board,uint8_t player,const DgMove *move)
+bool dg_apply(DgRules rules,uint8_t *board,uint8_t player,const DgMove *move)
 {
  DgMove valid;
- if(!move || !dg_find_move(board,player,move->from,move->to,&valid,NULL) || valid.type!=move->type || valid.hops!=move->hops)return false;
+ if(!move || !dg_find_move(rules,board,player,move->from,move->to,&valid,NULL) || valid.type!=move->type || valid.hops!=move->hops)return false;
  board[move->from]=DG_EMPTY;board[move->to]=player;return true;
 }
 uint8_t dg_goal_count(const uint8_t *board,uint8_t player)

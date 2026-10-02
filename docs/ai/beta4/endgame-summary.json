@@ -1,0 +1,708 @@
+{
+  "provenance": "60 deterministic synthetic positions, same board construction for all versions; 180 choices each",
+  "assignment_metric": "common unrestricted lattice exact one-to-one step-distance proxy; production V2 also uses allowed-graph distances",
+  "timing": "host CPU seconds, never calculator latency",
+  "fixtures": {
+    "beta3-v1": {
+      "EASY": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.35,
+        "mean_assignment_after": 6.65,
+        "mean_nodes": 28.783333333333335,
+        "mean_depth": 1.0,
+        "mean_host_seconds": 6.866666666666666e-06
+      },
+      "NORMAL": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.283333333333333,
+        "mean_assignment_after": 6.716666666666667,
+        "mean_nodes": 676.3333333333334,
+        "mean_depth": 3.066666666666667,
+        "mean_host_seconds": 0.0009673999999999997
+      },
+      "HARD": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 2,
+        "assignment_regressions": 2,
+        "reversals": 0,
+        "mean_goal_after": 8.183333333333334,
+        "mean_assignment_after": 7.05,
+        "mean_nodes": 4287.05,
+        "mean_depth": 5.4,
+        "mean_host_seconds": 0.009672683333333333
+      }
+    },
+    "beta4-v1": {
+      "EASY": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.35,
+        "mean_assignment_after": 6.65,
+        "mean_nodes": 27.316666666666666,
+        "mean_depth": 1.0,
+        "mean_host_seconds": 7.783333333333334e-06
+      },
+      "NORMAL": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.3,
+        "mean_assignment_after": 6.583333333333333,
+        "mean_nodes": 673.3166666666667,
+        "mean_depth": 3.066666666666667,
+        "mean_host_seconds": 0.0016423000000000002
+      },
+      "HARD": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 2,
+        "reversals": 0,
+        "mean_goal_after": 8.216666666666667,
+        "mean_assignment_after": 7.0,
+        "mean_nodes": 19777.65,
+        "mean_depth": 6.383333333333334,
+        "mean_host_seconds": 0.06245415
+      }
+    },
+    "beta4-v2": {
+      "EASY": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.35,
+        "mean_assignment_after": 6.666666666666667,
+        "mean_nodes": 26.483333333333334,
+        "mean_depth": 1.0,
+        "mean_host_seconds": 7.633333333333332e-06
+      },
+      "NORMAL": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 0,
+        "reversals": 0,
+        "mean_goal_after": 8.266666666666667,
+        "mean_assignment_after": 6.566666666666666,
+        "mean_nodes": 670.4166666666666,
+        "mean_depth": 3.066666666666667,
+        "mean_host_seconds": 0.0014047166666666664
+      },
+      "HARD": {
+        "selections": 60,
+        "immediate_win_misses": 0,
+        "goal_exits": 0,
+        "assignment_regressions": 1,
+        "reversals": 0,
+        "mean_goal_after": 8.25,
+        "mean_assignment_after": 6.766666666666667,
+        "mean_nodes": 19255.183333333334,
+        "mean_depth": 6.366666666666666,
+        "mean_host_seconds": 0.05098270000000002
+      }
+    }
+  },
+  "historical_stalls": {
+    "beta3-v1": [
+      {
+        "case": 0,
+        "players": 2,
+        "seed": 325974845,
+        "finished": false,
+        "turns": 1200,
+        "endgame": {
+          "NORMAL": {
+            "selections": 576,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 565,
+            "mean_goal_after": 8.980902777777779,
+            "mean_assignment_after": 2.126736111111111,
+            "mean_nodes": 68.68229166666667,
+            "mean_depth": 2.0,
+            "mean_host_seconds": 5.8640624999999855e-05
+          },
+          "HARD": {
+            "selections": 581,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 284,
+            "reversals": 563,
+            "mean_goal_after": 8.97934595524957,
+            "mean_assignment_after": 4.676419965576592,
+            "mean_nodes": 2234.1135972461275,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0018533855421686753
+          }
+        }
+      },
+      {
+        "case": 1,
+        "players": 2,
+        "seed": 325974845,
+        "finished": false,
+        "turns": 1200,
+        "endgame": {
+          "NORMAL": {
+            "selections": 576,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 565,
+            "mean_goal_after": 8.980902777777779,
+            "mean_assignment_after": 2.126736111111111,
+            "mean_nodes": 68.68229166666667,
+            "mean_depth": 2.0,
+            "mean_host_seconds": 5.836284722222202e-05
+          },
+          "HARD": {
+            "selections": 581,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 284,
+            "reversals": 563,
+            "mean_goal_after": 8.97934595524957,
+            "mean_assignment_after": 4.676419965576592,
+            "mean_nodes": 2234.9535283993114,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.001844225473321859
+          }
+        }
+      },
+      {
+        "case": 2,
+        "players": 3,
+        "seed": 610839777,
+        "finished": false,
+        "turns": 1200,
+        "endgame": {
+          "EASY": {
+            "selections": 390,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 25,
+            "reversals": 242,
+            "mean_goal_after": 8.941025641025641,
+            "mean_assignment_after": 2.6153846153846154,
+            "mean_nodes": 22.043589743589745,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 3.94102564102565e-06
+          },
+          "NORMAL": {
+            "selections": 386,
+            "immediate_win_misses": 0,
+            "goal_exits": 5,
+            "assignment_regressions": 6,
+            "reversals": 366,
+            "mean_goal_after": 8.020725388601036,
+            "mean_assignment_after": 2.126943005181347,
+            "mean_nodes": 1152.80310880829,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0012936709844559586
+          },
+          "HARD": {
+            "selections": 375,
+            "immediate_win_misses": 0,
+            "goal_exits": 129,
+            "assignment_regressions": 186,
+            "reversals": 333,
+            "mean_goal_after": 7.365333333333333,
+            "mean_assignment_after": 11.381333333333334,
+            "mean_nodes": 6571.021333333333,
+            "mean_depth": 7.0,
+            "mean_host_seconds": 0.010062949333333333
+          }
+        }
+      },
+      {
+        "case": 3,
+        "players": 3,
+        "seed": 610944506,
+        "finished": false,
+        "turns": 1200,
+        "endgame": {
+          "EASY": {
+            "selections": 388,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 26,
+            "reversals": 252,
+            "mean_goal_after": 8.948453608247423,
+            "mean_assignment_after": 2.6056701030927836,
+            "mean_nodes": 21.317010309278352,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 3.6804123711340214e-06
+          },
+          "NORMAL": {
+            "selections": 383,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 188,
+            "reversals": 375,
+            "mean_goal_after": 8.992167101827675,
+            "mean_assignment_after": 1.558746736292428,
+            "mean_nodes": 1103.6657963446476,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0013094438642297648
+          },
+          "HARD": {
+            "selections": 381,
+            "immediate_win_misses": 0,
+            "goal_exits": 2,
+            "assignment_regressions": 3,
+            "reversals": 373,
+            "mean_goal_after": 7.010498687664042,
+            "mean_assignment_after": 8.979002624671915,
+            "mean_nodes": 6615.918635170604,
+            "mean_depth": 7.0,
+            "mean_host_seconds": 0.010122727034120742
+          }
+        }
+      },
+      {
+        "case": 4,
+        "players": 3,
+        "seed": 611153964,
+        "finished": false,
+        "turns": 1200,
+        "endgame": {
+          "EASY": {
+            "selections": 384,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 88,
+            "reversals": 225,
+            "mean_goal_after": 8.934895833333334,
+            "mean_assignment_after": 1.8072916666666667,
+            "mean_nodes": 19.786458333333332,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 3.5520833333333276e-06
+          },
+          "NORMAL": {
+            "selections": 386,
+            "immediate_win_misses": 0,
+            "goal_exits": 1,
+            "assignment_regressions": 185,
+            "reversals": 371,
+            "mean_goal_after": 8.950777202072539,
+            "mean_assignment_after": 1.6088082901554404,
+            "mean_nodes": 1055.6269430051814,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0011615284974093255
+          },
+          "HARD": {
+            "selections": 376,
+            "immediate_win_misses": 0,
+            "goal_exits": 1,
+            "assignment_regressions": 179,
+            "reversals": 356,
+            "mean_goal_after": 7.023936170212766,
+            "mean_assignment_after": 9.534574468085106,
+            "mean_nodes": 6617.146276595745,
+            "mean_depth": 7.0,
+            "mean_host_seconds": 0.010054055851063825
+          }
+        }
+      }
+    ],
+    "beta4-v1": [
+      {
+        "case": 0,
+        "players": 2,
+        "seed": 325974845,
+        "finished": true,
+        "turns": 71,
+        "endgame": {
+          "NORMAL": {
+            "selections": 11,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.0,
+            "mean_assignment_after": 8.454545454545455,
+            "mean_nodes": 79.36363636363636,
+            "mean_depth": 2.0,
+            "mean_host_seconds": 0.00019827272727272725
+          },
+          "HARD": {
+            "selections": 17,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.764705882352942,
+            "mean_assignment_after": 7.235294117647059,
+            "mean_nodes": 20440.58823529412,
+            "mean_depth": 4.411764705882353,
+            "mean_host_seconds": 0.048883941176470595
+          }
+        }
+      },
+      {
+        "case": 1,
+        "players": 2,
+        "seed": 325974845,
+        "finished": true,
+        "turns": 61,
+        "endgame": {
+          "NORMAL": {
+            "selections": 6,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.0,
+            "mean_assignment_after": 12.0,
+            "mean_nodes": 77.83333333333333,
+            "mean_depth": 2.0,
+            "mean_host_seconds": 0.0003201666666666667
+          },
+          "HARD": {
+            "selections": 12,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.25,
+            "mean_assignment_after": 8.166666666666666,
+            "mean_nodes": 19211.0,
+            "mean_depth": 4.25,
+            "mean_host_seconds": 0.04990766666666666
+          }
+        }
+      },
+      {
+        "case": 2,
+        "players": 3,
+        "seed": 610839777,
+        "finished": true,
+        "turns": 70,
+        "endgame": {
+          "EASY": {
+            "selections": 13,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.769230769230769,
+            "mean_assignment_after": 17.076923076923077,
+            "mean_nodes": 42.0,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 7.384615384615385e-06
+          },
+          "NORMAL": {
+            "selections": 10,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 1,
+            "reversals": 0,
+            "mean_goal_after": 8.0,
+            "mean_assignment_after": 8.4,
+            "mean_nodes": 1043.2,
+            "mean_depth": 3.7,
+            "mean_host_seconds": 0.003972100000000001
+          },
+          "HARD": {
+            "selections": 6,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.666666666666667,
+            "mean_assignment_after": 11.0,
+            "mean_nodes": 24000.0,
+            "mean_depth": 8.0,
+            "mean_host_seconds": 0.11768283333333335
+          }
+        }
+      },
+      {
+        "case": 3,
+        "players": 3,
+        "seed": 610944506,
+        "finished": true,
+        "turns": 84,
+        "endgame": {
+          "EASY": {
+            "selections": 16,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.4375,
+            "mean_assignment_after": 15.625,
+            "mean_nodes": 42.625,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 7.187499999999999e-06
+          },
+          "NORMAL": {
+            "selections": 13,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 1,
+            "reversals": 0,
+            "mean_goal_after": 8.0,
+            "mean_assignment_after": 10.461538461538462,
+            "mean_nodes": 1100.0,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.004026846153846154
+          },
+          "HARD": {
+            "selections": 12,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 1,
+            "reversals": 1,
+            "mean_goal_after": 8.75,
+            "mean_assignment_after": 5.5,
+            "mean_nodes": 18658.666666666668,
+            "mean_depth": 7.0,
+            "mean_host_seconds": 0.10017733333333334
+          }
+        }
+      },
+      {
+        "case": 4,
+        "players": 3,
+        "seed": 611153964,
+        "finished": true,
+        "turns": 64,
+        "endgame": {
+          "EASY": {
+            "selections": 7,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.142857142857142,
+            "mean_assignment_after": 6.714285714285714,
+            "mean_nodes": 43.714285714285715,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 7.1428571428571436e-06
+          },
+          "NORMAL": {
+            "selections": 7,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.285714285714286,
+            "mean_assignment_after": 4.714285714285714,
+            "mean_nodes": 983.1428571428571,
+            "mean_depth": 3.5714285714285716,
+            "mean_host_seconds": 0.003925428571428572
+          },
+          "HARD": {
+            "selections": 1,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.0,
+            "mean_assignment_after": 12.0,
+            "mean_nodes": 1248.0,
+            "mean_depth": 9.0,
+            "mean_host_seconds": 0.002849
+          }
+        }
+      }
+    ],
+    "beta4-v2": [
+      {
+        "case": 0,
+        "players": 2,
+        "seed": 325974845,
+        "finished": true,
+        "turns": 57,
+        "endgame": {
+          "HARD": {
+            "selections": 6,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.666666666666666,
+            "mean_assignment_after": 4.0,
+            "mean_nodes": 14192.0,
+            "mean_depth": 3.5,
+            "mean_host_seconds": 0.029667333333333334
+          }
+        }
+      },
+      {
+        "case": 1,
+        "players": 2,
+        "seed": 325974845,
+        "finished": true,
+        "turns": 57,
+        "endgame": {
+          "HARD": {
+            "selections": 6,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.666666666666666,
+            "mean_assignment_after": 4.0,
+            "mean_nodes": 14168.0,
+            "mean_depth": 3.5,
+            "mean_host_seconds": 0.031082
+          }
+        }
+      },
+      {
+        "case": 2,
+        "players": 3,
+        "seed": 610839777,
+        "finished": true,
+        "turns": 80,
+        "endgame": {
+          "EASY": {
+            "selections": 13,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.230769230769231,
+            "mean_assignment_after": 15.923076923076923,
+            "mean_nodes": 32.23076923076923,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 7.153846153846153e-06
+          },
+          "NORMAL": {
+            "selections": 12,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.916666666666667,
+            "mean_assignment_after": 12.333333333333334,
+            "mean_nodes": 1075.0,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0035086666666666673
+          },
+          "HARD": {
+            "selections": 10,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.0,
+            "mean_assignment_after": 6.8,
+            "mean_nodes": 17523.4,
+            "mean_depth": 6.8,
+            "mean_host_seconds": 0.08373620000000001
+          }
+        }
+      },
+      {
+        "case": 3,
+        "players": 3,
+        "seed": 610944506,
+        "finished": true,
+        "turns": 82,
+        "endgame": {
+          "EASY": {
+            "selections": 10,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.7,
+            "mean_assignment_after": 14.4,
+            "mean_nodes": 30.6,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 5.599999999999999e-06
+          },
+          "NORMAL": {
+            "selections": 8,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.625,
+            "mean_assignment_after": 5.125,
+            "mean_nodes": 1002.5,
+            "mean_depth": 3.625,
+            "mean_host_seconds": 0.00275475
+          },
+          "HARD": {
+            "selections": 1,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.0,
+            "mean_assignment_after": 5.0,
+            "mean_nodes": 544.0,
+            "mean_depth": 9.0,
+            "mean_host_seconds": 0.000325
+          }
+        }
+      },
+      {
+        "case": 4,
+        "players": 3,
+        "seed": 611153964,
+        "finished": true,
+        "turns": 72,
+        "endgame": {
+          "EASY": {
+            "selections": 8,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 8.5,
+            "mean_assignment_after": 6.75,
+            "mean_nodes": 24.5,
+            "mean_depth": 1.0,
+            "mean_host_seconds": 5.2500000000000006e-06
+          },
+          "NORMAL": {
+            "selections": 7,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 0,
+            "reversals": 0,
+            "mean_goal_after": 7.142857142857143,
+            "mean_assignment_after": 13.571428571428571,
+            "mean_nodes": 910.1428571428571,
+            "mean_depth": 4.0,
+            "mean_host_seconds": 0.0024264285714285716
+          },
+          "HARD": {
+            "selections": 7,
+            "immediate_win_misses": 0,
+            "goal_exits": 0,
+            "assignment_regressions": 1,
+            "reversals": 1,
+            "mean_goal_after": 8.714285714285714,
+            "mean_assignment_after": 3.2857142857142856,
+            "mean_nodes": 11338.285714285714,
+            "mean_depth": 7.571428571428571,
+            "mean_host_seconds": 0.05036028571428571
+          }
+        }
+      }
+    ]
+  }
+}

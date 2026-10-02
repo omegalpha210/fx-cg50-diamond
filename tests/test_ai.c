@@ -17,6 +17,7 @@ static void immediate_win(uint8_t player)
 {
  DgGame game;
  assert(dg_new(&game,3u,DG_HARD,0u,17u));
+ game.rules_revision=DG_RULES_V1; /* Historical unrestricted tactical fixture. */
  memset(game.pos.board,0,sizeof(game.pos.board));
  int vacancy = -1,source = -1;
  for(int n = 0; n < DG_NODES && source < 0; ++n) {
@@ -85,6 +86,7 @@ static void easy_golden(void)
 };
  for(unsigned index=0u;index<sizeof cases/sizeof cases[0];++index){
   DgGame game;assert(dg_new(&game,cases[index].players,DG_EASY,cases[index].slot,cases[index].seed));
+  game.rules_revision=DG_RULES_V1; /* Historical opening/midgame RNG evidence. */
   uint64_t hash=UINT64_C(14695981039346656037);
   for(unsigned step=0u;step<36u;++step){
    DgMove move;uint32_t rng;DgAiStats stats;
@@ -118,7 +120,7 @@ void test_ai(void)
    assert(memcmp(&game,&snapshot,sizeof(game)) == 0);
    assert(dg_ai_choose(&game,128u,NULL,NULL,&b,&rng_b,&stats_b));
    assert(memcmp(&a,&b,sizeof(a)) == 0 && rng_a == rng_b);
-   assert(dg_find_move(game.pos.board,dg_current(&game),a.from,a.to,&valid,NULL));
+   assert(dg_find_move(dg_rules(&game),game.pos.board,dg_current(&game),a.from,a.to,&valid,NULL));
    assert(memcmp(&a,&valid,sizeof(a)) == 0);
    assert(stats_a.legal_moves > 0u && stats_a.cancelled == 0u);
    if(level != DG_EASY) {
@@ -128,7 +130,7 @@ void test_ai(void)
     DgAiStats fallback_stats;
     assert(dg_ai_choose(&game,1u,NULL,NULL,&fallback,&fallback_rng,&fallback_stats));
     assert(fallback_stats.nodes <= 1u && fallback_stats.depth == 0u);
-    assert(dg_find_move(game.pos.board,dg_current(&game),fallback.from,fallback.to,NULL,NULL));
+    assert(dg_find_move(dg_rules(&game),game.pos.board,dg_current(&game),fallback.from,fallback.to,NULL,NULL));
     assert(stats_a.nodes == stats_b.nodes && stats_a.depth == stats_b.depth);
     CancelState during_search = {0u,40u};
     assert(!dg_ai_choose(&game,12000u,stop_search,&during_search,&a,&rng_a,&stats_a));

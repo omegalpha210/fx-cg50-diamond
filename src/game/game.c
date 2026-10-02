@@ -2,11 +2,22 @@
 #include <string.h>
 uint8_t dg_current(const DgGame *game)
 {return game && (game->players==2 || game->players==3) && game->pos.turn<game->players?game->order[game->pos.turn]:DG_EMPTY;}
+uint32_t dg_board_hash(const uint8_t *board,uint8_t next_player)
+{
+ uint32_t hash=UINT32_C(2166136261);
+ for(unsigned n=0;n<DG_NODES;n++){hash^=board[n];hash*=UINT32_C(16777619);}
+ return (hash^next_player)*UINT32_C(16777619);
+}
+void dg_history_reset(DgGame *game)
+{memset(game->history,0,sizeof game->history);game->history_count=game->history_next=0;}
 bool dg_position_valid(const DgGame *game,const DgPosition *pos,bool undo)
 {
  if(!game || !pos || (game->players!=2 && game->players!=3) || pos->turn>=game->players || !pos->rng || pos->winner>DG_GREEN)return false;
  unsigned count[4]={0};
- for(int i=0;i<DG_NODES;i++){if(pos->board[i]>DG_GREEN)return false;count[pos->board[i]]++;}
+ for(int i=0;i<DG_NODES;i++){
+  if(pos->board[i]>DG_GREEN || (pos->board[i] && !dg_landing_allowed(dg_rules(game),pos->board[i],i)))return false;
+  count[pos->board[i]]++;
+ }
  if(count[DG_RED]!=10 || count[DG_GREEN]!=10 || count[DG_YELLOW]!=(game->players==3?10u:0u))return false;
  if(undo && (pos->winner || game->order[pos->turn]!=DG_RED))return false;
  if(pos->winner && (pos->winner!=game->order[pos->turn] || !dg_won(pos->board,pos->winner)))return false;
@@ -15,7 +26,7 @@ bool dg_position_valid(const DgGame *game,const DgPosition *pos,bool undo)
 }
 bool dg_game_valid(const DgGame *game)
 {
- if(!game || (game->players!=2 && game->players!=3) || !dg_level_valid(game->level) || game->human_slot>=game->players || game->undo_valid>1 || !game->seed || !game->initial_rng)return false;
+ if(!game || !dg_rules_valid(dg_rules(game)) || !dg_level_valid(game->level) || game->human_slot>=game->players || game->undo_valid>1 || !game->seed || !game->initial_rng || game->history_count>DG_RECENT_TURNS || game->history_next>=DG_RECENT_TURNS)return false;
  unsigned seen=0;for(int i=0;i<game->players;i++){
   unsigned p=game->order[i];if(p<1 || p>3 || (seen&(1u<<p)))return false;seen|=1u<<p;
  }
@@ -27,6 +38,7 @@ bool dg_game_valid(const DgGame *game)
 static void initial(DgGame *game)
 {
  memset(&game->pos,0,sizeof game->pos);memset(&game->undo,0,sizeof game->undo);game->undo_valid=0;
+ dg_history_reset(game);
  game->pos.rng=game->initial_rng;
  for(int i=0;i<DG_NODES;i++)for(int p=1;p<=3;p++)if((p!=DG_YELLOW || game->players==3) && dg_in_camp(i,dg_home[p]))game->pos.board[i]=(uint8_t)p;
 }
@@ -34,6 +46,7 @@ bool dg_new(DgGame *game,uint8_t players,uint8_t level,uint8_t slot,uint32_t see
 {
  if(!game || (players!=2 && players!=3) || !dg_level_valid(level) || slot>=players)return false;
  memset(game,0,sizeof *game);game->players=players;game->level=level;game->human_slot=slot;game->seed=seed?seed:1;
+ game->rules_revision=DG_RULES_V2;
  uint32_t rng=game->seed;game->order[slot]=DG_RED;
  if(players==2){game->order[1-slot]=DG_GREEN;game->order[2]=DG_NONE;}
  else{uint8_t first=(dg_random(&rng)&1)?DG_GREEN:DG_YELLOW;for(int i=0;i<3;i++)if(i!=slot){game->order[i]=first;first=first==DG_GREEN?DG_YELLOW:DG_GREEN;}}
@@ -44,15 +57,18 @@ bool dg_commit(DgGame *game,const DgMove *move)
 {
  if(!dg_game_valid(game) || game->pos.winner)return false;
  DgMove valid;uint8_t player=dg_current(game);
- if(!move || !dg_find_move(game->pos.board,player,move->from,move->to,&valid,NULL) || move->type!=valid.type || move->hops!=valid.hops)return false;
+ if(!move || !dg_find_move(dg_rules(game),game->pos.board,player,move->from,move->to,&valid,NULL) || move->type!=valid.type || move->hops!=valid.hops)return false;
  if(player==DG_RED){game->undo=game->pos;game->undo_valid=1;}
  game->pos.board[valid.from]=0;game->pos.board[valid.to]=player;game->pos.turns++;
  if(dg_won(game->pos.board,player))game->pos.winner=player;
  else game->pos.turn=(uint8_t)((game->pos.turn+1)%game->players);
+ game->history[game->history_next]=(DgRecent){dg_board_hash(game->pos.board,dg_current(game)),player,valid.from,valid.to};
+ game->history_next=(uint8_t)((game->history_next+1u)%DG_RECENT_TURNS);
+ if(game->history_count<DG_RECENT_TURNS)game->history_count++;
  return true;
 }
 bool dg_undo(DgGame *game)
 {
  if(!dg_game_valid(game) || game->pos.winner || dg_current(game)!=DG_RED || !game->undo_valid)return false;
- game->pos=game->undo;game->undo_valid=0;memset(&game->undo,0,sizeof game->undo);return true;
+ game->pos=game->undo;game->undo_valid=0;memset(&game->undo,0,sizeof game->undo);dg_history_reset(game);return true;
 }

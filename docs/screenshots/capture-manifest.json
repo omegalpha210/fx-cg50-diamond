@@ -1,6 +1,6 @@
 {
-  "tag": "v0.1.0-beta.3",
-  "current_renderer_frames": 131,
+  "candidate": "beta.4 experimental; hardware tests pending",
+  "current_renderer_frames": 145,
   "animation_frames": 26,
   "representative_path": "66:47:45:43:27:41",
   "hop_rtc_ticks": 15,

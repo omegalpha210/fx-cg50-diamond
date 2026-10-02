@@ -1,0 +1,56 @@
+[
+  {
+    "variant": "icon-uns.png",
+    "beta3_bounds": [
+      3,
+      2,
+      89,
+      52
+    ],
+    "previous_local_bounds": [
+      3,
+      0,
+      89,
+      50
+    ],
+    "new_bounds": [
+      6,
+      1,
+      86,
+      47
+    ],
+    "uniform_scale": 0.92,
+    "top_margin": 1,
+    "beta3_bottom_margin": 12,
+    "previous_bottom_margin": 14,
+    "new_bottom_margin": 17,
+    "physical_label_validation": "HARDWARE TEST REQUIRED"
+  },
+  {
+    "variant": "icon-sel.png",
+    "beta3_bounds": [
+      3,
+      2,
+      89,
+      52
+    ],
+    "previous_local_bounds": [
+      3,
+      0,
+      89,
+      50
+    ],
+    "new_bounds": [
+      6,
+      1,
+      86,
+      47
+    ],
+    "uniform_scale": 0.92,
+    "top_margin": 1,
+    "beta3_bottom_margin": 12,
+    "previous_bottom_margin": 14,
+    "new_bottom_margin": 17,
+    "physical_label_validation": "HARDWARE TEST REQUIRED"
+  }
+]

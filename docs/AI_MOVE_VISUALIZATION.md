@@ -1,5 +1,6 @@
-# Beta.3 AI move visualization
+# AI move visualization — local beta.4 candidate
 
+Logical behavior remains beta.3; the existing freeze also retains the older
 Beta.2 public baseline: `775310a178da07b275af3ecf0817339cbbae19d2`; local baseline:
 `d49c5d3`. The game, legality, AI, storage and power implementation/interface files
 remain byte-identical under the 15-file freeze guard. Presentation lives in
@@ -77,16 +78,20 @@ Geometry comes from transformed source/destination centers. Integer Q8 Euclidean
 normalization supplies tangent and normal; there are no direction-specific
 coordinate tables. Trim is six pixels in overview and nine in zoom: hole fill
 radius plus black outline plus one-pixel gap. Normal lane offset is applied
-before endpoint trim. Each segment has one two-line chevron in the same semantic
-color as its one-pixel line. STEP heads are near the midpoint; a later shared
-STEP head shifts one pixel toward its destination. JUMP heads are near 3/4 of
-the center distance, beyond the crossed hole, where the open interval is safe.
-Both wings follow the source-to-destination tangent in all six directions.
+before endpoint trim. Lines use 2px in overview and 3px in zoom, with flat
+trimmed caps and a direction-independent raster. Each actual hop has exactly
+one filled head in TRAIL_YELLOW or TRAIL_GREEN, matching its line. Head depth is
+4px/5px; base span is 5px/7px before rotation. The whole STEP head is centered
+in the open gap; a JUMP head uses the open interval after the crossed hole.
+Q8 positioning avoids early distance rounding that would touch a diagonal hole.
 
 Shared keys are `(min(from,to), max(from,to))`, including reverse movement.
-Earlier/later paths use -1/+1 pixels along the **low-id to high-id canonical
-normal**, so reversing travel never flips their physical lanes. Their chevrons
-keep the actual movement direction. Different-edge crossings use ordinary
+Earlier/later lanes use -3/+3 nominal pixels along the **low-id to high-id
+canonical normal**. Overview ±2px and ±2.5px were tested but shared a pixel at
+expanded diagonal arrow wings; ±3px retains every pixel of both colors. Zoom
+heads stagger by ±1px along the canonical tangent so their wider wings remain
+separate. This changes only drawing geometry, not the actual path or direction.
+Different-edge crossings use ordinary
 z-order. A path's landing holes and any crossed occupied hole are protected by
 rendering holes/pieces after trails. The cyan YOU route preview is below AI trails so it cannot erase a retained
 path; cyan endpoint markers, cursor, selection and HUD still follow the holes.
@@ -96,7 +101,8 @@ board, and zoom HUD is drawn last in its compact backing boxes.
 ## Reproducible evidence
 
 `test_visuals` checks 3,924 directed normalized segment/lane/view cases, actual
-arrow pixels against every hole, 48 same/opposite dual-lane cases, complete
+arrow pixels against every hole, thick-line endpoint clearance, exact axial
+2px/3px widths, 48 same/opposite dual-lane cases with no color overwrite, complete
 renderer layering, interpolation, atomic state and trail lifetimes. App/native
 tests cover committed replay system requests, search cancellation, winning
 modal/tombstone order, midnight timing, APO, save faults and unchanged idle.
@@ -119,6 +125,8 @@ both AI searches and commits are real. Shared-edge cases inject geometric paths
 and are not claims that AI chose those illustrative routes.
 
 [Palette audit](UI_COLOR_AUDIT.md), [validation](BETA_VALIDATION.md),
-[memory](MEMORY.md) and [46 pending hardware checks](HARDWARE_RETEST.md) record
+[memory](MEMORY.md) and [pending hardware checks](HARDWARE_RETEST.md) record
 scope and limits. Physical animation speed, trail contrast and input response
 remain HARDWARE TEST REQUIRED.
+
+USB cancellation and closed-file handoff are documented in [USB audit](USB_LIFECYCLE_AUDIT.md). [Icon/trail comparisons](ICON_TRAIL_POLISH.md) cover the current local presentation candidate. No new binary is published before USB hardware validation.

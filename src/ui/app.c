@@ -24,6 +24,7 @@ static void enter_game(DgApp *app)
 {
  app->screen=DG_GAME;app->modal=DG_MODAL_NONE;app->thinking=app->animation=0;app->selected=DG_NONE;app->path.length=0;app->zoom=0;
  clear_trails(app);
+ dg_history_reset(&app->archive.game);
  app->cursor=36;for(int n=0;n<DG_NODES;n++)if(app->archive.game.pos.board[n]==DG_RED){app->cursor=(uint8_t)n;break;}
  setup_from_game(app);
 }
@@ -55,7 +56,7 @@ void dg_app_preview(DgApp *app)
  if(app->animation || app->thinking)return;
  app->path.length=0;
  if(app->screen==DG_GAME && !app->animation && app->selected!=DG_NONE && app->archive.assist)
-  (void)dg_find_move(app->archive.game.pos.board,DG_RED,app->selected,app->cursor,NULL,&app->path);
+  (void)dg_find_move(dg_rules(&app->archive.game),app->archive.game.pos.board,DG_RED,app->selected,app->cursor,NULL,&app->path);
 }
 static void finished(DgApp *app)
 {
@@ -84,8 +85,8 @@ bool dg_app_key(DgApp *app,int key)
  app->notice[0]=0;
  if(app->screen==DG_RULES){
   if(key==DGK_EXIT)app->screen=app->parent;
-  else if(key==DGK_UP)app->rules_scroll=adjust(app->rules_scroll,-1,12);
-  else if(key==DGK_DOWN)app->rules_scroll=adjust(app->rules_scroll,1,12);
+  else if(key==DGK_UP)app->rules_scroll=adjust(app->rules_scroll,-1,15);
+  else if(key==DGK_DOWN)app->rules_scroll=adjust(app->rules_scroll,1,15);
   return true;
  }
  if(app->screen==DG_PLAYER || app->screen==DG_SETUP){
@@ -152,7 +153,8 @@ bool dg_app_key(DgApp *app,int key)
    else{app->selected=app->cursor;dg_app_preview(app);}
   }else{
    DgMove move;
-   if(!dg_find_move(game->pos.board,DG_RED,app->selected,app->cursor,&move,NULL))warning(app,game->pos.board[app->cursor]?"DESTINATION OCCUPIED":"INVALID MOVE");
+   if(!dg_find_move(dg_rules(game),game->pos.board,DG_RED,app->selected,app->cursor,&move,NULL))
+    warning(app,!dg_landing_allowed(dg_rules(game),DG_RED,app->cursor)?"OPPONENT CAMP":game->pos.board[app->cursor]?"DESTINATION OCCUPIED":"INVALID MOVE");
    else if(dg_commit(game,&move)){clear_trails(app);finished(app);}
   }
   return true;
@@ -168,7 +170,7 @@ bool dg_app_cpu(DgApp *app,DgCancel cancel,void *context)
  if(!result){if(!app->ai_stats.cancelled)warning(app,"CPU HAS NO MOVE");return false;}
  DgGame *game=&app->archive.game;uint8_t actor=dg_current(game);
  memset(&app->path,0,sizeof app->path);
- if(!dg_find_move(game->pos.board,actor,app->pending_move.from,app->pending_move.to,NULL,&app->path)
+ if(!dg_find_move(dg_rules(game),game->pos.board,actor,app->pending_move.from,app->pending_move.to,NULL,&app->path)
     || app->path.length<2 || app->path.length>DG_NODES){warning(app,"CPU MOVE REJECTED");return false;}
  memcpy(app->animation_board,game->pos.board,DG_NODES);
  /* The engine validates the final move once. No frame touches game or RNG. */

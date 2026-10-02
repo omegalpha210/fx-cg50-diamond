@@ -1,42 +1,41 @@
-# Beta.3 memory and package measurements
+# Beta.4 memory and package measurements
 
-Before is verified beta.2 public `775310a` / local `d49c5d3`. After uses the same
-SH GCC 14.1.0, gint 2.11 and strict `-Os`. Linked ELF sections, `nm -S`, compiler
-`.su` files and packaged G3A provide these values.
+Before is the pre-task local integration with experimental USB and bright trails,
+not the older public beta.3 binary. Both use SH GCC 14.1.0, gint 2.11 and strict
+`-Os`. Values come from the ELF, `nm -S`, compiler `.su` and final packaged G3A.
+[Machine-readable summary](ai/beta4/memory.json).
 
-| Measurement | Beta.2 | Beta.3 | Change |
+| Measurement | Before | Beta.4 | Change |
 |---|---:|---:|---:|
-| `.text` | 44,240 | 46,064 | +1,824 |
-| `.rodata` | 13,720 | 13,684 | -36 |
-| `.data` | 80 | 80 | +0 |
-| `.bss` | 7,648 | 7,888 | +240 |
-| `.gint.bss` | 112 | 112 | +0 |
-| AI workspace incl. readiness | 6,257 | 6,257 | +0 |
-| AI transposition table | 0 | 0 | +0 |
-| SH app controller | 376 | 608 | +232 |
-| Largest own frame, storage save | 1,344 | 1,344 | 0 |
+| .text | 47,120 | 51,024 | +3,904 |
+| .rodata | 13,684 | 13,976 | +292 |
+| .data | 80 | 80 | +0 |
+| .bss | 7,888 | 11,632 | +3,744 |
+| .gint.bss | 112 | 112 | +0 |
+| AI workspace | 6,257 | 9,895 | +3,638 |
+| Controller | 608 | 704 | +96 |
+| Largest own stack frame | 1,344 | 1,732 | +388 |
 | Native framebuffers | 1 | 1 | +0 |
 | Framebuffer pixels | 177,408 | 177,408 | +0 |
 | gint framebuffer allocation | 177,504 | 177,504 | +0 |
-| G3A bytes | 87,628 | 89,416 | +1,788 |
+| G3A bytes | 90,472 | 94,668 | +4,196 |
 
-New presentation fields total **231 bytes**: 73-byte pre-board, two 77-byte
-trails (154), and actor/phase/ticks (4). Compile-time size assertions verify the
-compact char-only layouts. Alignment adds one byte to the 232-byte controller
-increase; linked BSS rises 240 bytes. Replay reuses the existing 75-byte DgPath,
-whose node array has 74 entries. No archive/undo payload grows.
+AI workspace now includes the allowed-graph goal-distance cache and nine-ply
+candidate/ancestor capacity. The controller includes twelve 8-byte recent-turn
+records (96 bytes); revision/history counters fit its existing alignment.
+There is no heap allocation per move, transposition table or extra framebuffer.
+The visual pre-board remains 73 bytes and trails remain 2×77 bytes. Encoded
+archives remain at most 208 bytes under the 256-byte decoder limit.
 
-Largest own compiler frame remains 1,344 bytes (storage save). `dg_render`
-remains 300 bytes; the board frame is 416 (previously 420); new `ui_trails`
-uses 104 bytes. These are single function frames, not total nested stack high
-water. AI workspace remains 6,257 SH / 6,273 host bytes with zero TT.
-The UI uses no heap allocation, no per-AI malloc/free and one native framebuffer.
+Largest own frame: **1732 bytes**, storage transaction.
+Endgame matching is 400 bytes, maxN 104 per recursive call, alpha-beta 60,
+root chooser 112, move generator 284 and reachability BFS 152. These individual
+frames are not total nested stack/heap high water; gint/OS/libc stacks and native
+long-play resource use still require measurement. The strict SH build retains
+`-Wframe-larger-than=2048` and produces zero warnings.
 
-`tools/memory_report.py` regenerates local JSON and all own compiler frames.
-Private-path ELF/maps/raw logs remain excluded from publication. Package SHA256:
-`4096f14bda7a500042162a522ba2dc568e9bc2bf4d6fac00504ba157232a7bf2`.
-The exact public source rebuild and uploaded asset re-download must match those
-bytes. [Validation](BETA_VALIDATION.md) records software evidence.
-Actual gint/OS/libc nested stack, heap high water and calculator frame/search
-timing remain **HARDWARE TEST REQUIRED**. Earlier beta.1 host RSS/footprint were
-1,785,856 / 1,294,696 bytes; neither is current calculator RAM evidence.
+Package: **94,668 bytes**. SHA256:
+`2db3242112391659e24901259f1b9c6e8136ec97867dd49ecb449949bb81908a`.
+Exact public-source rebuilding and re-downloaded release-asset matching are
+recorded in [publication](PUBLICATION.md). Display, search/USB latency and actual
+stack/heap high water remain **HARDWARE TEST REQUIRED**.

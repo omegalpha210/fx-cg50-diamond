@@ -61,3 +61,26 @@ unchanged source itself: the user explicitly approved excluding source-return
 turns while permitting retracing during a chain. FIFO BFS with ascending landing IDs retains the
 shortest path, then the lexicographically first path. This is an algorithmic
 state-equivalence proof, not a Japanese route-retrace restriction.
+
+## Beta.4 camp and reachability audit
+
+The checked-in topology is byte-identical to beta.3. [Six camp overlays](screenshots/beta4/camp-audit.png)
+and the [exact IDs, boundary rows and engine audit](screenshots/beta4/camp-audit.json)
+record all six ten-hole memberships and all four boundary holes per camp.
+
+Shared corners are 9 (RED GOAL / YELLOW HOME), 12 (RED GOAL / GREEN HOME),
+33 (GREEN GOAL / YELLOW HOME), 39 (GREEN HOME / YELLOW GOAL),
+60 (RED HOME / GREEN GOAL), 63 (YELLOW GOAL / RED HOME).
+
+V2 checks own HOME/GOAL membership first. It then excludes active opponent
+memberships. The same physical node can therefore be legal for two colors.
+All 50 active HOME starts across 2P and 3P can reach all ten of their own goal
+holes using the actual empty-board legal step generator. Fifteen fixtures
+construct and commit 10/10 wins for every active color and difficulty.
+
+Exhaustive directed two-step geometry finds zero pairs with two allowed
+endpoints and an active-opponent-camp midpoint, under this V2 policy. Thus no
+realizable example requires a special midpoint exemption. The engine still
+checks only midpoint occupancy, without inventing a crossing restriction.
+There are 312 constructed excluded intermediate routes and 58 legal goal-exit
+edges in the rule tests. Cursor navigation continues to reach all 73 nodes.

@@ -27,21 +27,59 @@ bool ui_trail_segment(const DgApp *app,int from,int to,int lane,UiTrailSegment *
  int dx=tx-x,dy=ty-y,length=root((unsigned)(dx*dx+dy*dy)*65536u);
  /* Canonical low-id -> high-id normal, regardless of movement direction. */
  int sign=from<to?1:-1;
- int ox=along(-dy,sign*lane,length),oy=along(dx,sign*lane,length);
+ /* A 5px head needs +/-3px lanes: +/-2 (and 2.5 after diagonal
+    rounding) shares a wing pixel. Exhaustive raster tests enforce a gap. */
+ int offset=sign*lane*768;
+ int ox=rounded(-dy*offset,length),oy=rounded(dx*offset,length);
  x+=ox;y+=oy;tx+=ox;ty+=oy;
  int trim=app->zoom?9:6;
  s->x=x+along(dx,trim,length);s->y=y+along(dy,trim,length);
  s->tx=tx-along(dx,trim,length);s->ty=ty-along(dy,trim,length);
- /* For JUMP, put the head in the open interval beyond the crossed hole. */
- int head=rounded(length*(jump?3:2),1024)+(jump?1:0);
- /* One-pixel STEP-head stagger keeps short shared chevrons distinguishable. */
- if(!jump && lane>0)head++;
- int back=app->zoom?3:2;
- s->ax=x+along(dx,head,length);s->ay=y+along(dy,head,length);
- int bx=x+along(dx,head-back,length),by=y+along(dy,head-back,length);
- int nx=along(-dy,1,length),ny=along(dx,1,length);
+ /* Center the whole filled head in the open gap. For JUMP, use the gap
+    beyond the crossed hole; the path itself is unchanged. */
+ int back=app->zoom?5:4;
+ int head=length*(jump?3:2)/4+back*128;
+ /* Stagger broad zoom heads along the canonical tangent, preserving each
+    arrow's true direction and keeping the two inner wing pixels separate. */
+ if(app->zoom)head+=lane*sign*256;
+ s->ax=x+rounded(dx*head,length);s->ay=y+rounded(dy*head,length);
+ int bx=x+rounded(dx*(head-back*256),length),by=y+rounded(dy*(head-back*256),length);
+ int half=app->zoom?3:2;
+ int nx=along(-dy,half,length),ny=along(dx,half,length);
  s->bx=bx+nx;s->by=by+ny;s->cx=bx-nx;s->cy=by-ny;
  return true;
+}
+static int minimum(int a,int b){return a<b?a:b;}
+static int maximum(int a,int b){return a>b?a:b;}
+void ui_trail_line(DgPainter *p,const UiTrailSegment *s,int width,uint16_t ink)
+{
+ int dx=s->tx-s->x,dy=s->ty-s->y,square=dx*dx+dy*dy;
+ if(!square)return;
+ int length=root((unsigned)square*65536u),sign=dx<0 || (!dx && dy<0)?-1:1;
+ int lo=maximum(minimum(s->y,s->ty)-width,p->top);
+ int hi=minimum(maximum(s->y,s->ty)+width,p->bottom-1);
+ int left=maximum(minimum(s->x,s->tx)-width,p->left);
+ int right=minimum(maximum(s->x,s->tx)+width,p->right-1);
+ for(int y=lo;y<=hi;y++)for(int x=left;x<=right;x++){
+  int px=x-s->x,py=y-s->y,dot=px*dx+py*dy;
+  int cross=sign*(dx*py-dy*px)*512;
+  /* Half-open normal interval gives exactly 2/3 pixels on axial lines.
+     Canonical direction preserves the same raster when a hop reverses. */
+  if(dot>=0 && dot<=square && cross>=-width*length && cross<width*length)
+   ui_rect(p,x,y,1,1,ink);
+ }
+}
+static int cross(int ax,int ay,int bx,int by,int x,int y)
+{return (bx-ax)*(y-ay)-(by-ay)*(x-ax);}
+void ui_trail_arrow(DgPainter *p,const UiTrailSegment *s,uint16_t ink)
+{
+ int left=minimum(s->ax,minimum(s->bx,s->cx)),right=maximum(s->ax,maximum(s->bx,s->cx));
+ int top=minimum(s->ay,minimum(s->by,s->cy)),bottom=maximum(s->ay,maximum(s->by,s->cy));
+ for(int y=top;y<=bottom;y++)for(int x=left;x<=right;x++){
+  int a=cross(s->ax,s->ay,s->bx,s->by,x,y),b=cross(s->bx,s->by,s->cx,s->cy,x,y);
+  int c=cross(s->cx,s->cy,s->ax,s->ay,x,y);
+  if((a>=0 && b>=0 && c>=0) || (a<=0 && b<=0 && c<=0))ui_rect(p,x,y,1,1,ink);
+ }
 }
 static bool shared(const DgPath *other,int from,int to)
 {
@@ -60,9 +98,9 @@ void ui_trails(DgPainter *p,const DgApp *app)
    int from=trail->path.node[i-1],to=trail->path.node[i];
    int lane=other->valid && other->path.length<=DG_NODES && shared(&other->path,from,to)?(slot?1:-1):0;
    UiTrailSegment s;if(!ui_trail_segment(app,from,to,lane,&s))continue;
-   uint16_t ink=ui_actor_color(trail->player);
-   ui_line(p,s.x,s.y,s.tx,s.ty,ink);
-   ui_line(p,s.ax,s.ay,s.bx,s.by,ink);ui_line(p,s.ax,s.ay,s.cx,s.cy,ink);
+   uint16_t ink=trail->player==DG_YELLOW?TRAIL_YELLOW:TRAIL_GREEN;
+   ui_trail_line(p,&s,app->zoom?3:2,ink);
+   ui_trail_arrow(p,&s,ink); /* Exactly one head per actual hop. */
   }
  }
 }

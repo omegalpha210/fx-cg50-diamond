@@ -51,7 +51,7 @@ static void board(DgPainter *p,const DgApp *app)
   ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,occupied?ui_piece_color(who):UI_WHITE);
  }
  if(app->selected<DG_NODES && app->archive.assist){DgMove moves[DG_NODES];
-  size_t count=dg_piece_moves(g->pos.board,DG_RED,app->selected,moves,DG_NODES);
+  size_t count=dg_piece_moves(dg_rules(g),g->pos.board,DG_RED,app->selected,moves,DG_NODES);
   for(size_t i=0;i<count;i++){int x,y;dg_screen_position(app,moves[i].to,&x,&y);
    ui_disc(&b,x,y,radius+1,UI_BLACK);ui_disc(&b,x,y,radius,BOARD_CYAN);}}
  if(app->selected<DG_NODES){int x,y;dg_screen_position(app,app->selected,&x,&y);ui_ring(&b,x,y,radius+3,PIECE_YELLOW);ui_ring(&b,x,y,radius+4,BOARD_INK);}

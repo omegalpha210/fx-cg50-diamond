@@ -46,6 +46,8 @@ static DgGame base(uint8_t players,bool synthetic)
  DgGame game;CHECK(dg_new(&game,players,DG_EASY,1,1));
  CHECK(dg_current(&game)==DG_GREEN);
  if(synthetic){
+  /* Historical unrestricted fixtures remain explicit V1 compatibility tests. */
+  game.rules_revision=DG_RULES_V1;
   memset(game.pos.board,0,sizeof game.pos.board);
   memset(&game.undo,0,sizeof game.undo);game.undo_valid=0;
  }
@@ -98,7 +100,7 @@ static DgGame multijump(uint8_t players)
  fill_to(&game,DG_RED,DG_PIECES,reserved,center,true);
  if(players==3)fill_to(&game,DG_YELLOW,DG_PIECES,reserved,center,true);
  DgMove route;DgPath path;
- CHECK(dg_find_move(game.pos.board,DG_GREEN,dg_coord(-2,0),dg_coord(2,0),&route,&path));
+ CHECK(dg_find_move(dg_rules(&game),game.pos.board,DG_GREEN,dg_coord(-2,0),dg_coord(2,0),&route,&path));
  CHECK(route.type==DG_JUMP && route.hops>=2 && path.length==route.hops+1);
  return game;
 }
@@ -118,7 +120,7 @@ static DgGame nearly_won(uint8_t players)
  fill_to(&game,DG_RED,DG_PIECES,reserved,center,false);
  if(players==3)fill_to(&game,DG_YELLOW,DG_PIECES,reserved,center,false);
  CHECK(dg_goal_count(game.pos.board,DG_GREEN)==9);
- DgMove winning;CHECK(dg_find_move(game.pos.board,DG_GREEN,source,vacancy,&winning,NULL));
+ DgMove winning;CHECK(dg_find_move(dg_rules(&game),game.pos.board,DG_GREEN,source,vacancy,&winning,NULL));
  DgGame copy=game;CHECK(dg_commit(&copy,&winning));CHECK(copy.pos.winner==DG_GREEN);
  return game;
 }
@@ -155,7 +157,7 @@ static void bench(DgGame game,unsigned fixture)
  CHECK(dg_game_valid(&game) && dg_current(&game)==DG_GREEN && !game.pos.winner);
  CHECK(pieces(&game,DG_RED)==DG_PIECES && pieces(&game,DG_GREEN)==DG_PIECES);
  CHECK(pieces(&game,DG_YELLOW)==(game.players==3?DG_PIECES:0u));
- DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(game.pos.board,DG_GREEN,moves,DG_MAX_MOVES);
+ DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&game),game.pos.board,DG_GREEN,moves,DG_MAX_MOVES);
  CHECK(count>0 && count<=DG_MAX_MOVES);
  unsigned max_hops=0,goal_occupied=0;
  for(size_t i=0;i<count;i++)if(moves[i].type==DG_JUMP && moves[i].hops>max_hops)max_hops=moves[i].hops;
@@ -171,7 +173,7 @@ static void bench(DgGame game,unsigned fixture)
   clock_t end=clock();CHECK(end!=(clock_t)-1);
   double elapsed=(double)(end-start)/(double)CLOCKS_PER_SEC;
   CHECK(!memcmp(&before,&game,sizeof game));
-  CHECK(dg_find_move(game.pos.board,DG_GREEN,move.from,move.to,&valid,NULL));
+  CHECK(dg_find_move(dg_rules(&game),game.pos.board,DG_GREEN,move.from,move.to,&valid,NULL));
   CHECK(!memcmp(&move,&valid,sizeof move));CHECK(stats.legal_moves==count && !stats.cancelled);
   DgAiProfile profile;CHECK(dg_ai_profile(game.players,level,&profile));
   if(level!=DG_EASY)CHECK(stats.nodes<=profile.node_budget);

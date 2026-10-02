@@ -21,10 +21,10 @@ static void relocate(DgGame *game,uint8_t who,int destination)
 static void fixture(DgGame game,const char *name)
 {
  DgMove moves[DG_MAX_MOVES];DgPath path;uint8_t player=dg_current(&game);
- size_t count=dg_generate(game.pos.board,player,moves,DG_MAX_MOVES);assert(count);
+ size_t count=dg_generate(dg_rules(&game),game.pos.board,player,moves,DG_MAX_MOVES);assert(count);
  begin();position(&game.pos);
  for(size_t i=0;i<count;i++){
-  DgMove found;assert(dg_find_move(game.pos.board,player,moves[i].from,moves[i].to,&found,&path));
+  DgMove found;assert(dg_find_move(dg_rules(&game),game.pos.board,player,moves[i].from,moves[i].to,&found,&path));
   bytes((const uint8_t *)&found,sizeof found);byte(path.length);bytes(path.node,path.length);
   assert(found.from!=found.to);
  }
@@ -74,9 +74,9 @@ int main(void)
   assert(dg_current(&game)==DG_RED);fixture(game,"reachable_midgame");
   assert(dg_new(&game,players,DG_EASY,0,123456));
   relocate(&game,DG_RED,dg_coord(0,0));relocate(&game,DG_GREEN,dg_coord(1,0));relocate(&game,DG_GREEN,dg_coord(2,-1));
-  DgMove jump;DgPath path;assert(dg_find_move(game.pos.board,DG_RED,dg_coord(0,0),dg_coord(2,-2),&jump,&path));
+  DgMove jump;DgPath path;assert(dg_find_move(dg_rules(&game),game.pos.board,DG_RED,dg_coord(0,0),dg_coord(2,-2),&jump,&path));
   assert(jump.type==DG_JUMP && jump.hops>=2);
-  assert(!dg_find_move(game.pos.board,DG_RED,dg_coord(0,0),dg_coord(0,0),NULL,NULL));
+  assert(!dg_find_move(dg_rules(&game),game.pos.board,DG_RED,dg_coord(0,0),dg_coord(0,0),NULL,NULL));
   assert(dg_game_valid(&game));fixture(game,"multi_jump");
  }
  return 0;

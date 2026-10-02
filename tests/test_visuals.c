@@ -9,16 +9,27 @@
 
 static uint16_t pixels[224][396],plain[224][396];
 static unsigned segments,arrow_pixels,frames,dual_edges;
-static bool arrows_only;
+static bool arrows_only,line_only;
 static const DgApp *geometry_app;
+static int geometry_from,geometry_to,geometry_lane;
 static void raster(void *context,int x,int y,int w,int h,uint16_t ink)
 {
  (void)context;assert(x>=0 && y>=0 && x+w<=396 && y+h<=224 && w>0 && h>0);
  for(int row=y;row<y+h;row++)for(int col=x;col<x+w;col++){
+  if(line_only){
+   int radius=geometry_app->zoom?8:5;
+   const int nodes[2]={geometry_from,geometry_to};
+   for(unsigned i=0;i<2;i++){
+    int nx,ny;dg_screen_position(geometry_app,nodes[i],&nx,&ny);
+    assert((col-nx)*(col-nx)+(row-ny)*(row-ny)>radius*radius);
+   }
+  }
   if(arrows_only){
    int radius=geometry_app->zoom?8:5;
    for(int n=0;n<DG_NODES;n++){
     int nx,ny;dg_screen_position(geometry_app,n,&nx,&ny);
+    if((col-nx)*(col-nx)+(row-ny)*(row-ny)<=radius*radius)
+     fprintf(stderr,"Head collision zoom=%u %d->%d lane=%d pixel=%d,%d hole=%d (%d,%d)\n",geometry_app->zoom,geometry_from,geometry_to,geometry_lane,col,row,n,nx,ny);
     assert((col-nx)*(col-nx)+(row-ny)*(row-ny)>radius*radius);
    }
    arrow_pixels++;
@@ -42,7 +53,7 @@ static void finish_cpu(DgApp *app)
  DgGame expected=app->archive.game;uint8_t actor=dg_current(&expected);
  DgMove move;DgPath path={0};uint32_t rng;DgAiStats stats;
  assert(dg_ai_choose(&expected,0,NULL,NULL,&move,&rng,&stats));
- assert(dg_find_move(expected.pos.board,actor,move.from,move.to,NULL,&path));
+ assert(dg_find_move(dg_rules(&expected),expected.pos.board,actor,move.from,move.to,NULL,&path));
  uint8_t board[DG_NODES];memcpy(board,expected.pos.board,sizeof board);
  assert(dg_commit(&expected,&move));expected.pos.rng=rng;
  assert(dg_app_cpu(app,NULL,NULL));assert(!app->thinking && app->animation);
@@ -83,7 +94,7 @@ static void trails_and_lifetime(void)
   DgApp app;begin(&app,players,1,DG_NORMAL);
   while(dg_current(&app.archive.game)!=DG_RED)finish_cpu(&app);
   /* Consume one legal YOU move, then the entire AI chain. */
-  DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+  DgMove moves[DG_MAX_MOVES];size_t count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
   app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));app.cursor=moves[0].to;assert(dg_app_key(&app,DGK_EXE));
   assert(!app.trails[0].valid && !app.trails[1].valid);
   finish_cpu(&app);DgAiTrail first=app.trails[1];
@@ -96,7 +107,7 @@ static void trails_and_lifetime(void)
   }else assert(!app.trails[0].valid && app.trails[1].player==DG_GREEN);
   assert(dg_current(&app.archive.game)==DG_RED);
   DgAiTrail kept[2];memcpy(kept,app.trails,sizeof kept);
-  count=dg_generate(app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
+  count=dg_generate(dg_rules(&app.archive.game),app.archive.game.pos.board,DG_RED,moves,DG_MAX_MOVES);assert(count);
   assert(dg_app_key(&app,DGK_LEFT));assert(dg_app_key(&app,DGK_F5));
   app.cursor=moves[0].from;assert(dg_app_key(&app,DGK_EXE));
   assert(dg_app_key(&app,DGK_EXE));assert(app.notice[0]); /* invalid source = destination */
@@ -141,6 +152,7 @@ static void geometry(void)
   int x,y,tx,ty;dg_screen_position(&app,from,&x,&y);dg_screen_position(&app,to,&tx,&ty);
   int dx=tx-x,dy=ty-y;
   for(int lane=-1;lane<=1;lane++){
+   geometry_from=from;geometry_to=to;geometry_lane=lane;
    UiTrailSegment s;assert(ui_trail_segment(&app,from,to,lane,&s));segments++;
    assert((s.tx-s.x)*dx+(s.ty-s.y)*dy>0);
    assert((2*s.ax-s.bx-s.cx)*dx+(2*s.ay-s.by-s.cy)*dy>0);
@@ -148,8 +160,8 @@ static void geometry(void)
    assert((s.x-x)*(s.x-x)+(s.y-y)*(s.y-y)>radius*radius);
    assert((s.tx-tx)*(s.tx-tx)+(s.ty-ty)*(s.ty-ty)>radius*radius);
    /* Actual Bresenham head pixels, checked against every hole, not just ends. */
-   arrows_only=true;ui_line(&painter,s.ax,s.ay,s.bx,s.by,UI_YELLOW_TEXT);
-   ui_line(&painter,s.ax,s.ay,s.cx,s.cy,UI_YELLOW_TEXT);arrows_only=false;
+   arrows_only=true;ui_trail_arrow(&painter,&s,TRAIL_YELLOW);arrows_only=false;
+   line_only=true;ui_trail_line(&painter,&s,zoom?3:2,TRAIL_YELLOW);line_only=false;
    UiTrailSegment reverse;assert(ui_trail_segment(&app,to,from,lane,&reverse));
    assert(s.x==reverse.tx && s.y==reverse.ty && s.tx==reverse.x && s.ty==reverse.y);
   }
@@ -160,11 +172,24 @@ static void geometry(void)
   app.zoom=zoom;int to=jump?dg_nodes[center].jump[direction]:dg_nodes[center].neighbor[direction];assert(to>=0);
   app.trails[0]=(DgAiTrail){.valid=1,.player=DG_YELLOW,.path={.length=2,.node={(uint8_t)center,(uint8_t)to}}};
   app.trails[1]=(DgAiTrail){.valid=1,.player=DG_GREEN,.path={.length=2,.node={(uint8_t)(opposite?to:center),(uint8_t)(opposite?center:to)}}};
-  memset(pixels,0,sizeof pixels);ui_trails(&painter,&app);
+  /* Independent lane paint cannot erase any pixel from the first lane. */
+  UiTrailSegment first,second;
+  assert(ui_trail_segment(&app,center,to,-1,&first));
+  assert(ui_trail_segment(&app,opposite?to:center,opposite?center:to,1,&second));
+  memset(pixels,0,sizeof pixels);ui_trail_line(&painter,&first,zoom?3:2,TRAIL_YELLOW);ui_trail_arrow(&painter,&first,TRAIL_YELLOW);
+  memcpy(plain,pixels,sizeof plain);
+  ui_trail_line(&painter,&second,zoom?3:2,TRAIL_GREEN);ui_trail_arrow(&painter,&second,TRAIL_GREEN);
+  for(int row=0;row<224;row++)for(int col=0;col<396;col++)
+   if(plain[row][col]==TRAIL_YELLOW){
+    if(pixels[row][col]!=TRAIL_YELLOW)fprintf(stderr,"Lane overlap z=%u d=%d opp=%u jump=%u at %d,%d\n",zoom,direction,opposite,jump,col,row);
+    assert(pixels[row][col]==TRAIL_YELLOW);
+   }
+  memcpy(plain,pixels,sizeof plain);memset(pixels,0,sizeof pixels);ui_trails(&painter,&app);
+  assert(!memcmp(plain,pixels,sizeof plain));
   unsigned yellow=0,green=0;
   for(int row=0;row<224;row++)for(int col=0;col<396;col++){
    if(pixels[row][col])assert(row>=26 && row<204 && col>=4 && col<392);
-   yellow+=pixels[row][col]==UI_YELLOW_TEXT;green+=pixels[row][col]==UI_GREEN_TEXT;
+   yellow+=pixels[row][col]==TRAIL_YELLOW;green+=pixels[row][col]==TRAIL_GREEN;
   }
   assert(yellow>0 && green>0);dual_edges++;
  }
@@ -191,14 +216,26 @@ static void geometry(void)
   .path={.length=2,.node={(uint8_t)center,(uint8_t)dg_nodes[center].neighbor[0]}}};
  app.path=app.trails[1].path;render(&app);
  unsigned visible=0;int x,y;dg_screen_position(&app,center,&x,&y);
- for(int row=y-1;row<=y+1;row++)for(int col=x+9;col<=x+10;col++)visible+=pixels[row][col]==UI_GREEN_TEXT;
+ for(int row=y-1;row<=y+1;row++)for(int col=x+9;col<=x+10;col++)visible+=pixels[row][col]==TRAIL_GREEN;
  assert(visible>0);
+ /* Exact 2/3-pixel axial width and direction-independent stroke raster. */
+ for(int width=2;width<=3;width++){
+  UiTrailSegment s={.x=100,.y=100,.tx=120,.ty=100};
+  memset(pixels,0,sizeof pixels);ui_trail_line(&painter,&s,width,TRAIL_GREEN);
+  for(int col=100;col<=120;col++){
+   unsigned count=0;for(int row=95;row<=105;row++)count+=pixels[row][col]==TRAIL_GREEN;
+   assert(count==(unsigned)width);
+  }
+  memcpy(plain,pixels,sizeof plain);memset(pixels,0,sizeof pixels);
+  s.x=120;s.tx=100;ui_trail_line(&painter,&s,width,TRAIL_GREEN);assert(!memcmp(plain,pixels,sizeof plain));
+ }
 }
 int main(void)
 {
  _Static_assert(sizeof(DgAiTrail)==77,"trail RAM bound");
  _Static_assert(sizeof(((DgApp *)0)->animation_board)==73,"pre-board RAM bound");
  assert(UI_YELLOW_TEXT==UI_GOLD && UI_YELLOW_TEXT==ui_level_color(DG_NORMAL) && UI_YELLOW_TEXT==ui_actor_color(DG_YELLOW));
+ assert(TRAIL_YELLOW==0xf5c0 && TRAIL_GREEN==0x5644 && TRAIL_GREEN!=BOARD_CYAN);
  assert(PIECE_YELLOW==DG_RGB(31,24,0) && UI_YELLOW_TEXT!=PIECE_YELLOW);
  assert(DG_HOP_TICKS*1000/128>=100 && DG_HOP_TICKS*1000/128<=150);
  topology_bound();trails_and_lifetime();geometry();

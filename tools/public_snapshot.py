@@ -9,12 +9,12 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = {'CMakeLists.txt', '.gitignore', 'AGENTS.md', 'LICENSE',
               'THIRD_PARTY_NOTICES.md', 'README.md', 'README_KO.md'}
-DOC_FILES = {'GAME_RULES.md', 'BOARD_GEOMETRY.md', 'RULE_SOURCES.md',
+DOC_FILES = {'BETA4_AUDIT.md', 'GAME_RULES.md', 'BOARD_GEOMETRY.md', 'RULE_SOURCES.md',
              'STORAGE_FORMAT.md', 'DEVELOPMENT.md', 'AI_DESIGN.md',
              'AI_DIFFICULTY_AUDIT.md', 'POWER_AUDIT.md', 'UI_CONVENTIONS.md',
              'UI_BETA_AUDIT.md', 'HARDWARE_RETEST.md', 'BETA_VALIDATION.md',
              'PUBLICATION.md', 'RELEASE_NOTES.md', 'MEMORY.md',
-             'LICENSE_AUDIT.md', 'ACCEPTANCE.md', 'UI_POLISH_BETA2.md', 'AI_MOVE_VISUALIZATION.md', 'UI_COLOR_AUDIT.md'}
+             'LICENSE_AUDIT.md', 'ACCEPTANCE.md', 'UI_POLISH_BETA2.md', 'AI_MOVE_VISUALIZATION.md', 'UI_COLOR_AUDIT.md', 'USB_LIFECYCLE_AUDIT.md', 'ICON_TRAIL_POLISH.md'}
 TEXT_SUFFIXES = {'.c', '.h', '.S', '.py', '.sh', '.txt', '.md', '.json', '.csv', '.yml', '.cmake'}
 
 def allowed(name):

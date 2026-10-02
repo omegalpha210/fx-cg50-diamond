@@ -47,7 +47,8 @@ size_t dg_encode(const DgArchive *archive,uint8_t *out,size_t cap)
  }
  if(size>cap || size>DG_SAVE_BYTES)return 0;
  memset(out,0,size);memcpy(out,magic,sizeof magic);
- out[8]=1;out[10]=(uint8_t)size;out[11]=(uint8_t)(size>>8);
+ out[8]=archive->active && archive->game.rules_revision==DG_RULES_V1?1:2;
+ out[10]=(uint8_t)size;out[11]=(uint8_t)(size>>8);
  put32(out+12,archive->generation);
  out[20]=archive->assist;out[21]=archive->active;
  if(archive->active){
@@ -55,6 +56,7 @@ size_t dg_encode(const DgArchive *archive,uint8_t *out,size_t cap)
   out[22]=g->undo_valid;
   out[24]=g->players;out[25]=g->level;out[26]=g->human_slot;
   memcpy(out+27,g->order,3);
+  if(out[8]==2)out[30]=g->rules_revision;
   put32(out+32,g->seed);put32(out+36,g->initial_rng);
   put_position(out+CONFIG,&g->pos);
   if(g->undo_valid)put_position(out+CONFIG+POSITION,&g->undo);
@@ -65,7 +67,7 @@ size_t dg_encode(const DgArchive *archive,uint8_t *out,size_t cap)
 bool dg_decode(DgArchive *archive,const uint8_t *data,size_t size)
 {
  if(!archive || !data || size<FLAGS || size>DG_SAVE_BYTES ||
-    memcmp(data,magic,sizeof magic) || data[8]!=1 || data[9] ||
+    memcmp(data,magic,sizeof magic) || (data[8]!=1 && data[8]!=2) || data[9] ||
     ((size_t)data[10]|((size_t)data[11]<<8))!=size ||
     get32(data+16)!=checksum(data,size) ||
     data[20]>1 || data[21]>1 || data[22]>1 || data[23])return false;
@@ -75,9 +77,10 @@ bool dg_decode(DgArchive *archive,const uint8_t *data,size_t size)
   if(size!=FLAGS || data[22])return false;
  }else{
   size_t expected=CONFIG+POSITION+(data[22]?POSITION:0);
-  if(size!=expected || data[30] || data[31])return false;
+  if(size!=expected || (data[8]==1?data[30]!=0:data[30]!=DG_RULES_V2) || data[31])return false;
   DgGame *g=&decoded.game;
   g->players=data[24];g->level=data[25];g->human_slot=data[26];
+  g->rules_revision=data[8]==1?DG_RULES_V1:data[30];
   memcpy(g->order,data+27,3);
   g->seed=get32(data+32);g->initial_rng=get32(data+36);
   g->undo_valid=data[22];

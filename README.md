@@ -6,13 +6,26 @@ A native Korean 73-hole Diamond Game. Play RED against GREEN in two-player
 mode, or against independent GREEN and YELLOW AI players in three-player mode.
 Move ten equal pieces into the opposite camp with steps and chained jumps.
 
-[한국어](README_KO.md) · [Download beta](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3) · [Rules](docs/GAME_RULES.md)
+[한국어](README_KO.md) · [Download beta](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4) · [Rules](docs/GAME_RULES.md)
+
+**Beta.4: corrected camp rules, legacy saves and focused endgame AI.** NEW
+uses the Korean manual's opponent-camp restriction, with own HOME/GOAL
+membership taking priority at shared corners. Existing V1 saves retain their
+original rules. HARD improves final-hole assignment and avoids needless
+reversals; every level chooses an immediate legal win before search or RNG.
+The icon uses uniform 92% scaling with 17 clear bottom rows.
+
+USB handoff remains **experimental / HARDWARE TEST REQUIRED**. Its native
+source is unchanged from the previous local candidate. A powered-down USB
+clock can prevent insertion detection; the OS connection dialog is unverified.
+This explicitly authorized experimental release does not claim a USB fix.
+[Beta.4 evidence](docs/BETA4_AUDIT.md) · [USB audit](docs/USB_LIFECYCLE_AUDIT.md)
 
 ![Three-player game, actual shared renderer](docs/screenshots/trails-you.png)
 
 **Experimental beta — HARDWARE TEST REQUIRED.** Host tests and package checks
 pass; calculator display, persistence, power behavior and AI latency still need
-the [46 hardware checks](docs/HARDWARE_RETEST.md).
+the [hardware checks](docs/HARDWARE_RETEST.md).
 
 - **2P / 3P:** the human is always RED. Choose the first player or your turn slot.
 - **EASY / NORMAL / HARD:** green / readable gold / red labels in numbered setup rows.
@@ -36,7 +49,7 @@ the [46 hardware checks](docs/HARDWARE_RETEST.md).
 ## Install
 
 Download `DIAMOND.g3a` and `SHA256SUMS.txt` from the
-[beta release](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.3).
+[beta release](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4).
 Verify the checksum, copy the G3A to the fx-CG50 storage root over USB, safely
 disconnect, and launch DIAMOND in the CASIO Main Menu.
 
@@ -76,13 +89,15 @@ THINKING dots cycle every 312.5ms without consuming RNG or resetting idle.
 ASSIST ON includes every legal final jump landing. The displayed path is one
 shortest representative route. Retracing is allowed during a jump chain; a turn
 ending on its starting hole is excluded. Steps and jumps cannot mix in a turn.
-No capture, king pieces or Japanese camp restrictions are used. Goal pieces may
-leave until someone wins. The first player with all ten pieces in the goal wins.
+V2 allows your HOME/GOAL first, then forbids other active camps at every landing.
+Inactive camps remain open. This Korean-manual correction has no king or capture.
+Goal pieces may leave until someone wins. The first player with all ten pieces in the goal wins.
 
 `DGSTATEA.dat` and `DGSTATEB.dat` are generations of one archive. Search and
 cursor redraws do not write flash. New games replace the resume after verified
-storage success. Old EASY/HARD v1 saves retain IDs 0/1; NORMAL uses ID 2 in the
-same format. [Save specification](docs/STORAGE_FORMAT.md).
+storage success. EASY/HARD/NORMAL retain IDs 0/1/2. V1 resumes retain V1 movement and byte layout;
+NEW uses format/rules V2. RESTART preserves the current revision. Twelve RAM-only
+AI history entries clear on NEW/RESTART/UNDO/RESUME and are never serialized. [Save specification](docs/STORAGE_FORMAT.md).
 
 ## Build and validate
 
@@ -111,8 +126,8 @@ Host milliseconds are not fx-CG50 timings; this AI is bounded, selective search.
 
 ## Rules and license
 
-Rules are independently summarized from
-[Korea Board Games](https://www.koreaboardgames.com/magazine/menuDetail?boardCd=contents&postNo=314)
+Rules combine an owner-supplied physical Korean manual transcription with
+independent summaries of [Korea Board Games](https://www.koreaboardgames.com/magazine/menuDetail?boardCd=contents&postNo=314)
 and [Korean Wikipedia](https://ko.wikipedia.org/wiki/다이아몬드_게임).
 [Source decisions](docs/RULE_SOURCES.md) and [geometry](docs/BOARD_GEOMETRY.md)
 explain the conventional 73-hole star: adjacent ten-hole camps share six boundary

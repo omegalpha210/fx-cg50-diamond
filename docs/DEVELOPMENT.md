@@ -32,7 +32,7 @@ assertions remain enabled in Release. Target warnings are errors; SH compiler
 stack reports use `-fstack-usage` and a 2,048-byte frame warning. No toolchain
 directory is written by these scripts. The release identity is `@DIAMOND`;
 storage uses only `DGSTATEA.dat` and `DGSTATEB.dat`.
-The G3A release date defaults to `2026.1001.0000` via `DG_PACKAGE_DATE`, so
+The G3A release date defaults to `2026.1003.0000` via `DG_PACKAGE_DATE`, so
 packaging does not acquire a different checksum just from the wall clock.
 
 ## Responsibility boundaries
