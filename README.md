@@ -2,54 +2,91 @@
 
 <img src="assets/icon-uns.png" width="92" height="64" alt="DIAMOND app icon">
 
-A native Korean 73-hole Diamond Game. Play RED against GREEN in two-player
-mode, or against independent GREEN and YELLOW AI players in three-player mode.
-Move ten equal pieces into the opposite camp with steps and chained jumps.
+**Ten pieces. One opposite camp. Race the AI across a 73-hole star.**
 
-[한국어](README_KO.md) · [Download beta](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4) · [Rules](docs/GAME_RULES.md)
+A native Korean Diamond Game for CASIO fx-CG50. You are **RED (YOU)**:
+play GREEN in 2P, or independent YELLOW and GREEN opponents in 3P.
+Choose EASY, NORMAL or HARD, with optional legal-move hints, zoom, undo and resume.
 
-**Beta.4: corrected camp rules, legacy saves and focused endgame AI.** NEW
-uses the Korean manual's opponent-camp restriction, with own HOME/GOAL
-membership taking priority at shared corners. Existing V1 saves retain their
-original rules. HARD improves final-hole assignment and avoids needless
-reversals; every level chooses an immediate legal win before search or RNG.
-The icon uses uniform 92% scaling with 17 clear bottom rows.
+[한국어 안내](README_KO.md) · [Download beta.4](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4) · [Full rules](docs/GAME_RULES.md)
 
-USB handoff remains **experimental / HARDWARE TEST REQUIRED**. Its native
-source is unchanged from the previous local candidate. A powered-down USB
-clock can prevent insertion detection; the OS connection dialog is unverified.
-This explicitly authorized experimental release does not claim a USB fix.
-[Beta.4 evidence](docs/BETA4_AUDIT.md) · [USB audit](docs/USB_LIFECYCLE_AUDIT.md)
+| 2P · YOU vs GREEN | 3P · YOU vs YELLOW and GREEN |
+|---|---|
+| ![V2 two-player starting board](docs/screenshots/2p-overview.png) | ![V2 three-player starting board](docs/screenshots/3p-overview.png) |
 
-![Three-player game, actual shared renderer](docs/screenshots/trails-you.png)
+**These are beta.4 V2 screens.** New games apply the corrected camp-entry rules
+shown below. Screenshots are 396 × 224 host captures from the game's actual
+renderer, not photographs of a calculator. Rule and endgame examples use
+prepared, engine-valid V2 positions; [capture details](docs/screenshots/README.md).
 
-**Experimental beta — HARDWARE TEST REQUIRED.** Host tests and package checks
-pass; calculator display, persistence, power behavior and AI latency still need
-the [hardware checks](docs/HARDWARE_RETEST.md).
+## How to play
 
-- **2P / 3P:** the human is always RED. Choose the first player or your turn slot.
-- **EASY / NORMAL / HARD:** green / readable gold / red labels in numbered setup rows.
-  EASY uses seeded heuristic choices; NORMAL uses a small bounded search; HARD
-  uses a larger bounded search. Two-player search uses alpha-beta; three-player search
-  uses MaxN with each AI maximizing its own score. [Measured audit](docs/AI_DIFFICULTY_AUDIT.md).
-- **AI moves:** only the final chosen move animates, at 117.1875ms per hop by RTC time.
-  GREEN/YELLOW directional trails remain until your next legal move.
-  [Animation and trail behavior](docs/AI_MOVE_VISUALIZATION.md).
-- **ASSIST:** cyan filled holes mark legal destinations. Turn it off for unaided play.
-- **UNDO:** take back one human decision and all following AI replies, once.
-- **RESTART:** confirm a fresh board with the same seed, difficulty and turn order.
-- **ZOOM:** toggle the enlarged board without changing selection or navigation.
-- **RESUME:** one unfinished game, with alternating checksummed A/B saves and recovery.
-- **Power:** system dim/APO settings, physical-key wake and committed-state checkpoints
-  before MENU/OFF/APO. [Implementation and test limits](docs/POWER_AUDIT.md).
+1. Select one of your RED pieces with **EXE**.
+2. Move to an adjacent empty hole, or jump over an adjacent piece into the empty
+   hole immediately beyond it. Chain jumps, change direction, or stop after any jump.
+3. Fill the opposite ten-hole camp first to win. For YOU, that is the top camp.
 
-![PLAYER](docs/screenshots/player.png)
-![Numbered GAME SETUP with matching RESUME](docs/screenshots/setup-3p-resume.png)
+All pieces have the same abilities. There is no capture or king. A turn uses
+steps **or** jumps, never both. Retracing during a chain is allowed, but finishing
+back on the starting hole is not. Goal pieces may leave until someone wins.
 
-## Install
+## The corrected camp rules, in pictures
 
-Download `DIAMOND.g3a` and `SHA256SUMS.txt` from the
-[beta release](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4).
+**HOME** is your starting camp; **GOAL** is the opposite camp. Each includes its
+four-hole inner boundary row. Some corner holes belong to two camps.
+Apply this order to every landing, including intermediate jump landings:
+
+| Landing belongs to… | Can your piece enter? |
+|---|---|
+| Your own HOME or GOAL, including a shared corner | **Yes**, subject to the normal move and occupancy rules |
+| An active opponent's HOME or GOAL, but neither of yours | **No** |
+| Neutral space, or an inactive camp with no active opponent membership | **Yes**, subject to the normal move and occupancy rules |
+
+| Opponent-only camp: blocked | Your own shared GOAL corner: allowed |
+|---|---|
+| ![RED is refused entry with an OPPONENT CAMP message](docs/screenshots/opponent-camp-overview.png) | ![RED can enter the cyan shared corner in its own top GOAL](docs/screenshots/shared-red-goal-allowed.png) |
+| The cursor targets GREEN's goal boundary. **OPPONENT CAMP** appears; that hole is not a cyan legal destination. | The top-left shared corner is both RED GOAL and YELLOW HOME. RED may enter because it is RED's own GOAL. |
+
+Shared corners have **player-relative permission**, not a single preferred owner
+color. The opponent-camp restriction and four-hole boundary come from the
+owner-supplied Korean manual; own-camp precedence at shared corners is the
+[documented project interpretation](docs/RULE_SOURCES.md). The actual 73-hole
+board is unchanged. In 2P, inactive YELLOW territory alone does not block entry.
+
+![In-game V2 rules: own camps first, other active camps forbidden](docs/screenshots/rules-v2-camps.png)
+
+## See your legal moves
+
+With **ASSIST ON**, cyan holes are legal destinations. Select a piece, move the
+cursor to a destination, then press EXE to commit. **F5** switches between the
+whole board and a larger view while keeping your selection.
+
+| Whole board · selected RED piece | F5 · the same selection enlarged |
+|---|---|
+| ![V2 Assist highlights legal RED destinations in overview](docs/screenshots/selected-overview.png) | ![The same V2 selection and legal destinations in zoom](docs/screenshots/selected-zoom.png) |
+
+ASSIST OFF hides the hints. A displayed jump route is one shortest representative
+path; human input, Assist and AI all use the same engine legality checks.
+AI moves replay with directional trails that remain until your next legal move.
+
+## Finish all ten
+
+The right-hand counters show how many pieces each player has in their GOAL.
+In this prepared V2 endgame, GREEN has **9/10**, then the actual AI makes the
+winning move and the game shows **10/10** after its replay.
+
+| One piece left to place | Final piece arrives · GREEN wins |
+|---|---|
+| ![V2 GREEN endgame with nine goal pieces](docs/screenshots/endgame-nine-green.png) | ![V2 GREEN AI wins with ten goal pieces](docs/screenshots/endgame-green-wins.png) |
+
+EASY offers lighter opposition; NORMAL and HARD search further. In 3P, each AI
+plays for its own win. Beta.4 improves final-hole play and takes an immediate
+legal win at every difficulty. [AI design and measured limits](docs/AI_DESIGN.md).
+
+## Install, start and resume
+
+Download **DIAMOND.g3a** and **SHA256SUMS.txt** from the
+[beta.4 release](https://github.com/omegalpha210/fx-cg50-diamond/releases/tag/v0.1.0-beta.4).
 Verify the checksum, copy the G3A to the fx-CG50 storage root over USB, safely
 disconnect, and launch DIAMOND in the CASIO Main Menu.
 
@@ -57,47 +94,43 @@ disconnect, and launch DIAMOND in the CASIO Main Menu.
 shasum -a 256 -c SHA256SUMS.txt
 ```
 
-PLAYER defaults to 3P. EXE/F6 NEXT opens GAME SETUP. An unfinished save enables
-F1 RESUME globally, even when the other player-count tile is selected. F2 stays blank.
-The red circles contain white profile silhouettes; AI circles retain centered AI text.
+| 1 · Choose 2P or 3P | 2 · Choose your settings and start |
+|---|---|
+| ![PLAYER menu with 2P and 3P choices](docs/screenshots/player.png) | ![GAME SETUP with resume, new game, difficulty, turn order and Assist](docs/screenshots/setup-3p-resume.png) |
 
-GAME SETUP uses numbered rows: optional matching RESUME, NEW GAME, DIFFICULTY,
-FIRST (2P) or YOU (3P), and ASSIST last. UP/DOWN moves row focus.
-LEFT/RIGHT clamps EASY → NORMAL → HARD, YOU/AI first, 1ST/2ND/3RD human slot,
-or OFF/ON Assist. EXE/F6 OPEN resumes only on RESUME; every other row starts a
-new game with the current settings. RESUME retains saved difficulty, turn order,
-CPU order, seed/RNG and undo; Assist is the global preference. F4 RULES remains available.
+- **PLAYER:** choose 2P/3P, then EXE/F6 NEXT. **F1 RESUME** continues the one saved
+  game, even if the other player-count tile is selected.
+- **GAME SETUP:** use UP/DOWN to choose a row and LEFT/RIGHT to change difficulty,
+  your first/turn slot, or Assist. Choices stop at each end.
+- **NEW GAME:** EXE/F6 OPEN starts a new game from every row except RESUME.
+  A matching saved game adds a RESUME row; select it to continue that game.
 
-TURN actors and full goal fractions use RED / gold / GREEN. The entire centered
-mode/difficulty label uses green / gold / red. During search, fixed-origin
-THINKING dots cycle every 312.5ms without consuming RNG or resetting idle.
+**Want the corrected rules? Choose NEW GAME.** Old V1 saves deliberately keep
+their original rules on RESUME and RESTART. Their rules screen says
+**LEGACY RULES**. New V2 games use the camp rules pictured above.
 
-## Controls
+## Controls during play
 
 | Key | Action |
 |---|---|
-| Arrows | Move cursor in overview/zoom; change menu choices |
+| Arrows | Move cursor in overview/zoom |
 | EXE / F6 | Select your RED piece, then commit a legal destination |
-| EXIT | Deselect → zoom out → checkpoint and return to setup |
-| F1 | Confirm restart |
-| F2 | Undo one human decision and all following AI replies |
+| EXIT | Deselect → zoom out → save and return to setup |
+| F1 | Restart after confirmation |
+| F2 | Undo one YOU decision and all following AI replies, once |
 | F4 | Read scrollable rules |
 | F5 | Toggle overview / zoom |
-| MENU | Checkpoint and open the real CASIO Main Menu |
-| SHIFT + AC/ON | Checkpoint and power off through gint |
+| MENU | Save and open the CASIO Main Menu |
+| SHIFT + AC/ON | Save and power off |
 
-ASSIST ON includes every legal final jump landing. The displayed path is one
-shortest representative route. Retracing is allowed during a jump chain; a turn
-ending on its starting hole is excluded. Steps and jumps cannot mix in a turn.
-V2 allows your HOME/GOAL first, then forbids other active camps at every landing.
-Inactive camps remain open. This Korean-manual correction has no king or capture.
-Goal pieces may leave until someone wins. The first player with all ten pieces in the goal wins.
+One unfinished game is kept in alternating checksummed A/B files. Cursor movement
+and AI search do not write flash. [Save and recovery details](docs/STORAGE_FORMAT.md).
 
-`DGSTATEA.dat` and `DGSTATEB.dat` are generations of one archive. Search and
-cursor redraws do not write flash. New games replace the resume after verified
-storage success. EASY/HARD/NORMAL retain IDs 0/1/2. V1 resumes retain V1 movement and byte layout;
-NEW uses format/rules V2. RESTART preserves the current revision. Twelve RAM-only
-AI history entries clear on NEW/RESTART/UNDO/RESUME and are never serialized. [Save specification](docs/STORAGE_FORMAT.md).
+**Experimental beta — HARDWARE TEST REQUIRED.** Host tests and package checks
+pass. Calculator display, persistence, power behavior, AI latency and USB
+connection handling still need [hardware checks](docs/HARDWARE_RETEST.md).
+USB handoff remains experimental; beta.4 does not claim a USB fix.
+[Beta.4 evidence](docs/BETA4_AUDIT.md) · [USB audit](docs/USB_LIFECYCLE_AUDIT.md).
 
 ## Build and validate
 
