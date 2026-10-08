@@ -50,7 +50,28 @@ static void barrier(void)
 static void restore_light(void)
 {if(brightness_saved){r61524_set(0x5a1,saved_brightness);brightness_saved=false;}power_state.dimmed=false;}
 static int read_power(void *unused)
-{(void)unused;dg_power_init(&power_state,rtc_ticks(),dg_os_backlight_duration(),dg_os_apo_minutes());return 0;}
+{
+    (void)unused;
+    dg_power_init(&power_state,rtc_ticks(),dg_os_backlight_duration(),dg_os_apo_minutes());
+#if !defined(DG_NATIVE_TEST_SDK_H)
+    /* KhiCAS Golden Rule: 5 minutes (300 seconds) auto-park on hardware */
+    power_state.off_ticks = 5u * 60u * 128u;
+#endif
+    return 0;
+}
+#if !defined(DG_NATIVE_TEST_SDK_H)
+static void show_poweroff_notice(void)
+{
+    int box_w = 340, box_h = 96;
+    int box_x = (396 - box_w) / 2;
+    int box_y = (224 - box_h) / 2;
+    drect_border(box_x, box_y, box_x + box_w - 1, box_y + box_h - 1, C_WHITE, 2, C_RGB(0, 16, 31));
+    dtext_opt(396 / 2, box_y + 16, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP, "Back to Main Menu");
+    dtext_opt(396 / 2, box_y + 46, C_RGB(0, 12, 28), C_NONE, DTEXT_CENTER, DTEXT_TOP, "To shutdown, press SHIFT AC/ON");
+    dtext_opt(396 / 2, box_y + 66, C_DARK, C_NONE, DTEXT_CENTER, DTEXT_TOP, "again in Main Menu");
+    dupdate();
+}
+#endif
 static int pulse(void){wakeup=1;return TIMER_CONTINUE;}
 static void start_clock(void)
 {
@@ -75,11 +96,11 @@ static void system_action(void *context,bool off)
  }
  stop_clock();restore_light();barrier();
 #if !defined(DG_NATIVE_TEST_SDK_H)
- /* Safe OS Parking Rule (KhiCAS pattern):
-    When user presses SHIFT+AC/ON or APO occurs,
-    commit save above, wait for key releases, call Syscall 0x1EA6,
-    and cleanly park into Casio OS Main Menu via gint_osmenu(). */
- while (keydown(KEY_ACON) || keydown(KEY_SHIFT) || keydown(KEY_MENU) || keydown(KEY_EXIT)) sleep();
+ /* KhiCAS Rule: Display notice, wait 1 second (128 ticks), clear events,
+    and cleanly park in Casio OS Main Menu via 0x1EA6 + gint_osmenu(). */
+ show_poweroff_notice();
+ uint32_t notice_t0 = rtc_ticks();
+ while ((rtc_ticks() + DG_RTC_DAY - notice_t0) % DG_RTC_DAY < 128) sleep();
  clearevents();
  (void)gint_world_switch(GINT_CALL(enable_menu_return,(void *)NULL));
  gint_osmenu();

@@ -1,6 +1,6 @@
 {
   "path": "src/platform/main.c",
   "baseline_sha256": "a528437966fcc87ffa7e765a5d1f28fd6d7367f60f6811d374800a89a44880a4",
-  "patched_sha256": "6b3e06b2fc1cc4f97e5df0a9b93be7604aabe738f2e17fddf5150ee8d76466c7",
+  "patched_sha256": "60298d1eb1e1645b0b70c3d4870e6e035023dfa402df61def2b32910be9b0284",
   "reason": "Authorized foreground MENU ownership compatibility change and safe OS parking; historical beta.4 manifest preserved. Native/Puregate regressions verify behavior; hash alone does not verify OS success."
 }
