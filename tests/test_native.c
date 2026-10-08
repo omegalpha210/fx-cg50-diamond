@@ -1,12 +1,23 @@
 #include "ui.h"
 #include "power.h"
+#include "menu_boundary.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 /* Compile the real native static functions into this test translation unit. */
 #define main dg_native_main
-#include "../src/platform/main.c"
+#ifndef DG_NATIVE_MAIN_SOURCE
+#define DG_NATIVE_MAIN_SOURCE "../src/platform/main.c"
+#endif
+#include DG_NATIVE_MAIN_SOURCE
 #undef main
+#ifdef DG_MENU_BASELINE
+/* Compile the old production entry for a red regression witness. These new
+   service symbols are unused before its unsafe direct helper call fails. */
+static CgMenuBoundary menu_boundary;
+static bool deferred_off;
+static bool service_menu(void){return false;}
+#endif
 MockUsbCpg mock_usb_cpg;
 MockUsbPower mock_usb_power;
 MockUsbRegisters mock_usb_registers={.SYSCFG={1}};
@@ -18,7 +29,8 @@ static unsigned checks;
 
 typedef struct {
  uint32_t now,rtc_step;unsigned thinking_phases;
- bool held[32],cleanup_ok,save_ok,rtc_ok,world,plug_on_save;
+ unsigned sleeps;
+ bool held[256],cleanup_ok,save_ok,rtc_ok,world,plug_on_save;
  int brightness,backlight,apo;
  unsigned saves,cleanups,menus,offs,starts,pauses,enables,disables,updates,rectangles,reads,clears;
  unsigned backlight_queries,apo_queries,light_reads,light_writes,rtc_reads;
@@ -31,6 +43,7 @@ static Mock mock;
 static keydev_t device;
 static uint16_t pixel;
 uint16_t *gint_vram=&pixel;
+static bool require_menu_quiet;
 
 static void record(char event)
 {
@@ -42,28 +55,41 @@ static void held_event(key_event_t event)
  if(event.key<=0 || event.key>=(int)(sizeof mock.held/sizeof mock.held[0]))return;
  if(event.type==KEYEV_DOWN)mock.held[event.key]=true;
  if(event.type==KEYEV_UP)mock.held[event.key]=false;
+ unsigned row=(unsigned)event.key>>4;uint8_t bit=(uint8_t)(1u<<(7-(event.key&7)));
+ if(event.type==KEYEV_DOWN)device.state_queue[row]|=bit;
+ if(event.type==KEYEV_UP)device.state_queue[row]&=(uint8_t)~bit;
+}
+static void scanned_event(key_event_t event)
+{
+ unsigned row=(unsigned)event.key>>4;uint8_t bit=(uint8_t)(1u<<(7-(event.key&7)));
+ if(event.type==KEYEV_DOWN)device.state_now[row]|=bit;
+ if(event.type==KEYEV_UP)device.state_now[row]&=(uint8_t)~bit;
+ device.time++;
 }
 static int deliver(int key,int type)
 {
- key_event_t event={key,type};held_event(event);return logical_key(event);
+ key_event_t event={key,type};scanned_event(event);held_event(event);return logical_key(event);
 }
 static void enqueue(int key,int type)
 {
  CHECK(mock.tail<sizeof mock.queue/sizeof mock.queue[0]);
  mock.queue[mock.tail++]=(key_event_t){key,type};
+ scanned_event((key_event_t){key,type});device.queue_end=(int8_t)(mock.tail%KEYBOARD_QUEUE_SIZE);
 }
 keydev_t *keydev_std(void){return &device;}
 key_event_t keydev_read(keydev_t *dev,bool wait,volatile int *flag)
 {
  CHECK(dev==&device);(void)wait;(void)flag;++mock.reads;
  if(mock.head==mock.tail)return (key_event_t){0,KEYEV_NONE};
- key_event_t event=mock.queue[mock.head++];held_event(event);return event;
+ key_event_t event=mock.queue[mock.head++];held_event(event);
+ device.queue_next=(int8_t)(mock.head%KEYBOARD_QUEUE_SIZE);return event;
 }
 void keydev_set_transform(keydev_t *dev,keydev_transform_t transform)
 {CHECK(dev==&device && transform.flags==KEYDEV_TR_REPEATS && transform.repeat!=NULL);}
 bool keydown(int key)
 {return key>0 && key<(int)(sizeof mock.held/sizeof mock.held[0]) && mock.held[key];}
-void clearevents(void){++mock.clears;mock.head=mock.tail;record('B');}
+void clearevents(void){++mock.clears;while(mock.head!=mock.tail)held_event(mock.queue[mock.head++]);device.queue_next=device.queue_end;record('B');}
+void sleep(void){mock.sleeps++;device.time++;mock.now=(mock.now+1)%DG_RTC_DAY;}
 void dsetvram(uint16_t *first,uint16_t *second){CHECK(first==gint_vram && second==NULL);}
 void drect(int x1,int y1,int x2,int y2,int color)
 {(void)color;CHECK(x1<=x2 && y1<=y2);++mock.rectangles;}
@@ -74,6 +100,7 @@ uint32_t rtc_ticks(void){++mock.rtc_reads;mock.now=(mock.now+mock.rtc_step)%DG_R
 void rtc_get_time(rtc_time_t *time){*time=(rtc_time_t){2026,1,10};}
 char dg_os_backlight_duration(void){CHECK(mock.world);++mock.backlight_queries;return (char)mock.backlight;}
 int dg_os_apo_minutes(void){CHECK(mock.world);++mock.apo_queries;return mock.apo;}
+int dg_os_enable_menu_return(void){CHECK(mock.world);return 0;}
 int gint_world_switch(gint_call_t call)
 {
  record('W');CHECK(!mock.world);mock.world=true;int result;
@@ -88,7 +115,9 @@ static void os_entry(void)
  CHECK(!brightness_saved && !power_state.dimmed);
  mock.now+=128u;
 }
-void gint_osmenu(void){os_entry();++mock.menus;record('M');}
+void gint_osmenu(void){
+ if(require_menu_quiet){CHECK(device.queue_next==device.queue_end);for(unsigned row=0;row<12;row++)CHECK(!device.state_now[row] && !device.state_queue[row]);}
+ os_entry();++mock.menus;record('M');}
 void gint_poweroff(bool key_wait){CHECK(key_wait);os_entry();++mock.offs;record('O');}
 int timer_configure(int timer,uint32_t delay,gint_call_t call)
 {CHECK(timer==TIMER_ANY && delay==20000u && call.without_argument==pulse);return 7;}
@@ -114,6 +143,7 @@ static void reset(void)
  mock_usb_registers.SYSCFG.SCKE=1;mock_usb_registers.INTSTS0.VBSTS=0;
  usb_initialize(&usb,0);
  memset(&mock,0,sizeof mock);mock.cleanup_ok=mock.save_ok=mock.rtc_ok=true;
+ memset(&device,0,sizeof device);cg_menu_cancel(&menu_boundary);deferred_off=false;require_menu_quiet=false;
  mock.brightness=0x80;mock.backlight=1;mock.apo=10;
  scheduler=7;pending_action=0;timer_active=rtc_active=shift_pending=brightness_saved=false;
  saved_brightness=0;blocked=animation_last=thinking_started=0;wakeup=0;
@@ -128,6 +158,48 @@ static void game(uint8_t players,uint8_t level)
  app.players=players;app.level=level;app.slot=1u;app.dirty=1u;
  CHECK(dg_current(&app.archive.game)!=DG_RED && dg_game_valid(&app.archive.game));
 }
+static void finish_menu(void)
+{
+ if(!menu_boundary.pending)return;
+ /* Legacy unit scenarios advance the real new foreground boundary with
+    explicit UP events and a scan, rather than treating sleep as release. */
+ for(int key=1;key<(int)(sizeof mock.held/sizeof mock.held[0]);key++)
+  if(mock.held[key])enqueue(key,KEYEV_UP);
+ while(mock.head!=mock.tail){key_event_t event=keydev_read(&device,false,NULL);idle(event);(void)logical_key(event);}
+ (void)service_menu();device.time++;(void)service_menu();
+}
+static void test_menu_boundary(void)
+{
+ reset();game(2,DG_EASY);start_clock();require_menu_quiet=true;
+ DgApp before=app;CHECK(deliver(KEY_MENU,KEYEV_DOWN)==DGK_MENU);
+ CHECK(dg_app_key(&app,DGK_MENU));CHECK(!mock.menus && mock.saves==1 && timer_active);
+ CHECK(!service_menu());CHECK(deliver(KEY_MENU,KEYEV_HOLD)==0);CHECK(!service_menu());
+ /* Raw scan released but its UP has not been consumed: not ready. */
+ scanned_event((key_event_t){KEY_MENU,KEYEV_UP});CHECK(!service_menu());
+ held_event((key_event_t){KEY_MENU,KEYEV_UP});CHECK(!service_menu());
+ CHECK(!service_menu());device.time++;CHECK(service_menu());
+ CHECK(mock.menus==1 && mock.saves==1 && !menu_boundary.pending);
+ before.archive=app.archive;before.dirty=0;before.thinking=before.animation=0;before.path.length=0;
+ CHECK(!memcmp(&before.archive.game,&app.archive.game,sizeof app.archive.game));
+ CHECK(!service_menu());
+ reset();game(3,DG_HARD);start_clock();require_menu_quiet=true;
+ (void)deliver(KEY_EXE,KEYEV_DOWN);(void)deliver(KEY_MENU,KEYEV_DOWN);
+ CHECK(dg_app_key(&app,DGK_MENU));(void)deliver(KEY_MENU,KEYEV_UP);
+ CHECK(!service_menu());device.time++;CHECK(!service_menu() && !mock.menus);
+ (void)deliver(KEY_EXE,KEYEV_UP);CHECK(!service_menu());device.time++;CHECK(service_menu() && mock.menus==1);
+ reset();game(2,DG_NORMAL);start_clock();DgGame preserved=app.archive.game;
+ (void)deliver(KEY_MENU,KEYEV_DOWN);CHECK(dg_app_key(&app,DGK_MENU));
+ mock.now=CG_MENU_WATCHDOG_TICKS;CHECK(service_menu());
+ CHECK(!mock.menus && !menu_boundary.pending && timer_active);
+ CHECK(strstr(app.notice,"MENU INPUT BUSY") && !memcmp(&preserved,&app.archive.game,sizeof preserved));
+ puts("MENU ownership: held/queued release, held EXE, fresh scan, one handoff and stuck cancellation preserve state; OS display unverified");
+}
+static bool test_app_key(int key){bool result=dg_app_key(&app,key);finish_menu();return result;}
+#define dg_app_key(app_,key_) test_app_key(key_)
+static void test_cpu_turn(void){cpu_turn();finish_menu();}
+#define cpu_turn() test_cpu_turn()
+static bool test_dispatch_key(int key){bool result=dispatch_key(key);finish_menu();return result;}
+#define dispatch_key(key_) test_dispatch_key(key_)
 
 static void test_shift_and_barrier(void)
 {
@@ -171,7 +243,7 @@ static void test_system_order(void)
   app.thinking=app.animation=1u;app.path.length=3u;
   DgGame committed=app.archive.game;clear_trace();
   CHECK(dg_app_key(&app,off?DGK_OFF:DGK_MENU));
-  CHECK(strcmp(mock.trace,off?"SCPLBOWBT":"SCPLBMWBT")==0);
+  CHECK(strcmp(mock.trace,off?"SCPLBOWBT":"SCPLMWT")==0);
   CHECK(mock.saves==1u && mock.cleanups==1u && mock.pauses==1u && mock.starts==2u);
   CHECK(mock.offs==off && mock.menus==1u-off);
   CHECK(timer_active && !rtc_active && !app.dirty && power_state.last==mock.now);
@@ -190,7 +262,7 @@ static void test_system_order(void)
  CHECK(mock.menus==0u && mock.offs==0u && mock.pauses==0u && timer_active);
  CHECK(strstr(app.notice,"STORAGE CLOSE FAILED")!=NULL);
  mock.cleanup_ok=true;clear_trace();CHECK(dg_app_key(&app,DGK_MENU));
- CHECK(strcmp(mock.trace,"CPBMWBT")==0 && mock.menus==1u);
+ CHECK(strcmp(mock.trace,"CPMWT")==0 && mock.menus==1u);
  /* A failed dirty checkpoint prevents even the cleanup/OS callback. */
  reset();game(2u,DG_HARD);start_clock();mock.save_ok=false;clear_trace();
  CHECK(dg_app_key(&app,DGK_OFF));CHECK(strcmp(mock.trace,"S")==0);
@@ -435,6 +507,7 @@ static void test_usb_native(void)
 }
 int main(void)
 {
+ test_menu_boundary();
  test_shift_and_barrier();test_system_order();test_cpu_keys();test_idle_and_pulse();
  test_power_settings();test_wake_once_and_low_brightness();test_internal_activity_and_interrupt();test_automatic_off_failure_is_finite();test_thinking_progress();test_animation_clock_and_skip();
  test_usb_native();

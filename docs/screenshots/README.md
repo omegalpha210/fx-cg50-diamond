@@ -1,38 +1,12 @@
-# Actual renderer captures — beta.4
+# Actual renderer captures — local candidate
 
-145 396×224 frames come from `tools/capture.c` calling the same
+138 396×224 frames come from `tools/capture.c` calling the same
 `dg_render()` used by the add-in, plus two explicitly labelled contrast sheets
 using the same line/arrow/disc primitives. These are actual host-rendered UI pixels;
 Python converts PPM to PNG and assembles sheets/crops without drawing a second UI.
 Captions use the retained gint atlas; enlarged crops use nearest-neighbor pixels.
 [Conventions](../UI_CONVENTIONS.md), [visualization](../AI_MOVE_VISUALIZATION.md) and
 [hardware retest](../HARDWARE_RETEST.md) explain behavior and physical limits.
-
-## Current V2 guide images
-
-The repository's English and Korean introductions use the following beta.4
-captures. They are existing, unmodified pixels from the release's actual renderer;
-this documentation update does not alter game code, screenshots or the binary.
-
-| Purpose | V2 images | Capture context |
-|---|---|---|
-| Starting boards | [2P](2p-overview.png), [3P](3p-overview.png) | Fresh V2 games |
-| Legal destinations and zoom | [overview](selected-overview.png), [zoom](selected-zoom.png) | The same engine-generated opening move selected in both views |
-| Opponent-only camp denied | [warning](opponent-camp-overview.png), [zoom](opponent-camp-zoom.png) | Prepared valid position: RED at node 42 attempts node 41; controller rejects it |
-| Shared own GOAL allowed | [RED shared corner](shared-red-goal-allowed.png) | Prepared valid position: RED at 19 may enter empty 9, which is RED GOAL and YELLOW HOME |
-| Current rule text | [V2 camps](rules-v2-camps.png) | In-game V2 RULES screen |
-| Final goal filled | [GREEN 9/10](endgame-nine-green.png), [GREEN 10/10](endgame-green-wins.png) | Prepared valid V2 endgame, followed by actual AI search, engine commit and completed replay |
-| Start / resume | [PLAYER](player.png), [GAME SETUP](setup-3p-resume.png) | Current menus; setup includes a matching V2 save |
-
-Prepared positions demonstrate specific behavior; they are not presented as a
-complete match played from the opening or as calculator photographs.
-
-**Historical-rule distinction:** `trails-you.png`, `trails-both.png` and the long
-3P trail/animation scenarios below use legacy V1 tactical fixtures rendered by
-the current UI. They demonstrate visualization and are not V2 camp-entry examples.
-The [LEGACY RULES screen](rules-v1-legacy.png) applies only to old V1 games.
-[The 2P trail](trails-2p.png) is a V2 opening AI move. Historical comparison
-folders remain historical evidence; the main introductions now feature V2 play.
 
 | View | Actual captures |
 |---|---|

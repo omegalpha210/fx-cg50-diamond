@@ -2,6 +2,7 @@
 #include "power.h"
 #include "usb_lifecycle.h"
 #include "usb_native.h"
+#include "menu_boundary.h"
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <gint/drivers/keydev.h>
@@ -9,10 +10,13 @@
 #include <gint/gint.h>
 #include <gint/rtc.h>
 #include <gint/timer.h>
+#include <gint/cpu.h>
 #include <stdio.h>
 static DgApp app;
 static DgPower power_state;
 static UsbLifecycle usb;
+static CgMenuBoundary menu_boundary;
+static bool deferred_off;
 static volatile int wakeup;
 static int scheduler=-1,pending_action;
 static bool timer_active,rtc_active,shift_pending,brightness_saved;
@@ -21,6 +25,17 @@ static uint32_t blocked,animation_last,thinking_started;
 /* Match libfxcg's scalar ABI: duration returns one char in 30-second units. */
 char dg_os_backlight_duration(void);
 int dg_os_apo_minutes(void);
+#if !defined(DG_NATIVE_TEST_SDK_H)
+__asm__(
+".text\n.align 2\n.global _dg_os_enable_menu_return\n"
+"_dg_os_enable_menu_return:\n"
+" mov.l 1f,r0\nmov.l 2f,r2\njmp @r2\nnop\n"
+".align 2\n1: .long 0x1ea6\n2: .long 0x80020070\n"
+);
+int dg_os_enable_menu_return(void);
+static int enable_menu_return(void *unused)
+{ (void)unused; return dg_os_enable_menu_return(); }
+#endif
 static void rect(void *context,int x,int y,int w,int h,uint16_t color)
 {(void)context;if(w>0 && h>0)drect(x,y,x+w-1,y+h-1,(int)color);}
 static void draw(void){DgCanvas canvas={NULL,rect};dg_render(&app,&canvas);dupdate();}
@@ -52,16 +67,57 @@ static void stop_clock(void)
 static void system_action(void *context,bool off)
 {
  (void)context;
+ if(!off){cg_menu_request(&menu_boundary,rtc_ticks());return;}
  if(!usb_handoff_begin(&usb,usb_native_sample()))return;
  if(!dg_storage_cleanup()){
   snprintf(app.notice,sizeof app.notice,"STORAGE CLOSE FAILED");
   usb_handoff_end(&usb,usb_native_sample());return;
  }
  stop_clock();restore_light();barrier();
+#if !defined(DG_NATIVE_TEST_SDK_H)
+ /* Safe OS Parking Rule (KhiCAS pattern):
+    When user presses SHIFT+AC/ON or APO occurs,
+    commit save above, wait for key releases, call Syscall 0x1EA6,
+    and cleanly park into Casio OS Main Menu via gint_osmenu(). */
+ while (keydown(KEY_ACON) || keydown(KEY_SHIFT) || keydown(KEY_MENU) || keydown(KEY_EXIT)) sleep();
+ clearevents();
+ (void)gint_world_switch(GINT_CALL(enable_menu_return,(void *)NULL));
+ gint_osmenu();
+#else
  if(off)gint_poweroff(true);else gint_osmenu();
+#endif
  (void)gint_world_switch(GINT_CALL(read_power,(void *)NULL));
  barrier();start_clock();animation_last=rtc_ticks();
  usb_handoff_end(&usb,usb_native_sample());
+}
+static bool service_menu(void)
+{
+ int boundary=cg_menu_step(&menu_boundary,keydev_std(),rtc_ticks(),DG_RTC_DAY);
+ if(boundary==CG_MENU_IDLE || boundary==CG_MENU_WAIT)return false;
+ if(boundary!=CG_MENU_READY){
+  cg_menu_cancel(&menu_boundary);snprintf(app.notice,sizeof app.notice,"MENU INPUT BUSY - RELEASE AND RETRY");return true;
+ }
+ if(!usb_handoff_begin(&usb,usb_native_sample()))return false;
+ if(!dg_storage_cleanup()){
+  cg_menu_cancel(&menu_boundary);snprintf(app.notice,sizeof app.notice,"STORAGE CLOSE FAILED");
+  usb_handoff_end(&usb,usb_native_sample());return true;
+ }
+ boundary=cg_menu_step(&menu_boundary,keydev_std(),rtc_ticks(),DG_RTC_DAY);
+ if(boundary!=CG_MENU_READY){
+  usb_handoff_end(&usb,usb_native_sample());
+  if(boundary==CG_MENU_INVALID || boundary==CG_MENU_TIMEOUT){cg_menu_cancel(&menu_boundary);snprintf(app.notice,sizeof app.notice,"MENU INPUT BUSY - RELEASE AND RETRY");return true;}
+  return false;
+ }
+ cg_menu_cancel(&menu_boundary);stop_clock();restore_light();shift_pending=false;
+#if !defined(DG_NATIVE_TEST_SDK_H)
+ while (keydown(KEY_MENU) || keydown(KEY_EXIT)) sleep();
+ clearevents();
+ (void)gint_world_switch(GINT_CALL(enable_menu_return,(void *)NULL));
+#endif
+ /* Queue is empty and both scanner/event states stayed released across a
+    fresh scan. Never clear newly queued requests at either side of this call. */
+ gint_osmenu();(void)gint_world_switch(GINT_CALL(read_power,(void *)NULL));
+ start_clock();animation_last=rtc_ticks();usb_handoff_end(&usb,usb_native_sample());return true;
 }
 static int repeat(int key,int duration,int count)
 {(void)duration;if(key!=KEY_UP && key!=KEY_DOWN && key!=KEY_LEFT && key!=KEY_RIGHT)return -1;return count?125000:500000;}
@@ -96,7 +152,7 @@ static bool dispatch_key(int key)
  bool system=key==DGK_MENU || key==DGK_OFF;
  if(system)(void)usb_take_request(&usb);
  bool redraw=dg_app_key(&app,key);
- if(system){
+ if(system && !menu_boundary.pending){
   /* Include insertions during a failed checkpoint with no OS callback. */
   (void)usb_handoff_begin(&usb,usb_native_sample());
   usb_handoff_end(&usb,usb_native_sample());
@@ -128,7 +184,7 @@ static void cpu_turn(void)
  /* dg_app_cpu cleared thinking already; busy EXIT still bypasses zoom. */
  if(pending_action==DGK_EXIT)(void)dg_app_to_setup(&app);
  else if(pending_action)(void)dispatch_key(pending_action);
- pending_action=0;barrier();animation_last=rtc_ticks();draw();
+ pending_action=0;if(!menu_boundary.pending)barrier();animation_last=rtc_ticks();draw();
 }
 static bool animation_frame(void)
 {
@@ -140,6 +196,7 @@ static bool animation_frame(void)
 }
 int main(void)
 {
+ cg_menu_cancel(&menu_boundary);deferred_off=false;
  /* One framebuffer; the renderer targets the native 396x224 gint VRAM. */
  dsetvram(gint_vram,NULL);
  rtc_time_t date;rtc_get_time(&date);
@@ -157,6 +214,21 @@ int main(void)
  if(scheduler<0 && !rtc_active)snprintf(app.notice,sizeof app.notice,"IDLE TIMER UNAVAILABLE");
  animation_last=rtc_ticks();barrier();draw();
  for(;;){
+  if(deferred_off && !menu_boundary.pending){deferred_off=false;(void)dispatch_key(DGK_OFF);draw();continue;}
+  if(menu_boundary.pending){
+   key_event_t event={0};
+   for(unsigned count=0;count<32;count++){
+    event=keydev_read(keydev_std(),false,NULL);idle(event);int key=logical_key(event);
+    if(key==DGK_OFF || pending_action==DGK_OFF)deferred_off=true;
+    if(key==DGK_EXIT){cg_menu_cancel(&menu_boundary);snprintf(app.notice,sizeof app.notice,"MENU CANCELLED");}
+    else if(key==DGK_MENU)cg_menu_request(&menu_boundary,rtc_ticks());
+    (void)usb_take_request(&usb);pending_action=0;
+    if(event.type==KEYEV_NONE)break;
+   }
+   if(service_menu() || !menu_boundary.pending)draw();
+   if(event.type==KEYEV_NONE)sleep();
+   continue;
+  }
   bool cpu=app.screen==DG_GAME && !app.modal && !app.animation && !app.archive.game.pos.winner && dg_current(&app.archive.game)!=DG_RED;
   if(cpu){
    cpu_turn();continue;
@@ -166,7 +238,7 @@ int main(void)
   idle(event);int key=logical_key(event);if(pending_action){key=pending_action;pending_action=0;}
   bool redraw=false;uint8_t old_screen=app.screen,old_modal=app.modal;uint32_t old_turns=app.archive.game.pos.turns;
   if(key)redraw=dispatch_key(key);
-  if(old_screen!=app.screen || old_modal!=app.modal || old_turns!=app.archive.game.pos.turns)barrier();
+  if(!menu_boundary.pending && (old_screen!=app.screen || old_modal!=app.modal || old_turns!=app.archive.game.pos.turns))barrier();
   redraw=animation_frame() || redraw;
   if(redraw)draw();
  }

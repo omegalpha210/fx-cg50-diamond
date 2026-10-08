@@ -5,12 +5,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 enum {
- KEY_UP=1,KEY_DOWN,KEY_LEFT,KEY_RIGHT,KEY_EXE,KEY_EXIT,
- KEY_F1,KEY_F2,KEY_F3,KEY_F4,KEY_F5,KEY_F6,KEY_MENU,KEY_ACON,KEY_SHIFT
+ KEY_UP=0x86,KEY_DOWN=0x75,KEY_LEFT=0x85,KEY_RIGHT=0x76,KEY_EXE=0x15,KEY_EXIT=0x74,
+ KEY_F1=0x91,KEY_F2=0x92,KEY_F3=0x93,KEY_F4=0x94,KEY_F5=0x95,KEY_F6=0x96,
+ KEY_MENU=0x84,KEY_ACON=0x07,KEY_SHIFT=0x81
 };
 enum { KEYEV_NONE,KEYEV_DOWN,KEYEV_UP,KEYEV_HOLD };
 typedef struct { int key,type; } key_event_t;
-typedef struct { int unused; } keydev_t;
+#define KEYBOARD_QUEUE_SIZE 32
+typedef struct {uint32_t time;int8_t queue_next,queue_end;uint8_t state_now[12],state_queue[12];} keydev_t;
 typedef struct { unsigned flags;int (*repeat)(int,int,int); } keydev_transform_t;
 #define KEYDEV_TR_REPEATS 1u
 keydev_t *keydev_std(void);
